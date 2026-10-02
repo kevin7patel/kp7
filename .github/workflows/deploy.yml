@@ -1,0 +1,33 @@
+# REDESIGN path: rebuilds and deploys the app only when app code changes on main.
+# Data is never touched here (the sync workflow owns data/).
+name: Deploy app
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['docs/**', '**/*.md']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gh-pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - run: bash scripts/publish-pages.sh app
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

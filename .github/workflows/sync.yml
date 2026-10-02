@@ -1,0 +1,74 @@
+# SYNC path: SYNC → VALIDATE → NORMALIZE → CALCULATE → UPDATE → VERIFY
+# Scheduled reconciliation every 30 minutes (plus manual / on-demand triggers).
+# Publishes ONLY the encrypted payload, and only when Notion content changed.
+# Read-only against Notion. Logs contain counts and stage names, never Notion content.
+name: Notion sync
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+  repository_dispatch:
+    types: [notion-change]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gh-pages
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check configuration
+        id: cfg
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          DASHBOARD_KEY: ${{ secrets.DASHBOARD_KEY }}
+        run: |
+          if [ -z "$NOTION_TOKEN" ] || [ -z "$DASHBOARD_KEY" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "### Notion sync not configured" >> "$GITHUB_STEP_SUMMARY"
+            echo "Add the NOTION_TOKEN and DASHBOARD_KEY repository secrets (see docs/setup.md). Skipping." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.cfg.outputs.configured == 'true'
+      - uses: actions/setup-node@v4
+        if: steps.cfg.outputs.configured == 'true'
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+        if: steps.cfg.outputs.configured == 'true'
+
+      - name: Restore previous content hash
+        if: steps.cfg.outputs.configured == 'true'
+        run: |
+          mkdir -p .data/publish
+          git fetch --depth 1 origin gh-pages 2>/dev/null && git show origin/gh-pages:data/content.hmac > .data/publish/content.hmac 2>/dev/null || rm -f .data/publish/content.hmac
+
+      - name: Sync from Notion
+        if: steps.cfg.outputs.configured == 'true'
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          DASHBOARD_KEY: ${{ secrets.DASHBOARD_KEY }}
+        run: npm run sync -- --source=api --publish
+
+      - name: Publish encrypted payload (only if content changed)
+        if: steps.cfg.outputs.configured == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          changed=$(node -e "console.log(require('./.data/status.json').changed)")
+          if [ "$changed" = "true" ]; then bash scripts/publish-pages.sh data; else echo "Notion content unchanged — nothing to publish"; fi
+          {
+            echo "### Notion sync"
+            echo "- ok: $(node -e "console.log(require('./.data/status.json').ok)")"
+            echo "- content changed: $changed"
+          } >> "$GITHUB_STEP_SUMMARY"
