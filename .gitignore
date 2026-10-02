@@ -1,0 +1,11 @@
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+# Personal Notion data never goes into git (this repo is public).
+.data/
+public/data/
+.env
+.env.*
+!.env.example
+screenshots/

@@ -1,0 +1,120 @@
+/*
+ * Semantic design tokens. Light and dark are each designed, not inverted:
+ * light = warm paper plane with soft elevation; dark = graphite with hairline
+ * highlights and luminous data. Data hues are the validated categorical palette
+ * stepped per mode (see dataviz validator results in docs/ARCHITECTURE.md).
+ */
+:root {
+  color-scheme: light;
+  --font: system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  --font-display: system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+  --mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  --bg: #f3f2ee;
+  --bg-tint: #ecebe6;
+  --surface: #ffffff;
+  --surface-2: #f7f6f3;
+  --surface-3: #efeee9;
+  --border: rgba(18, 18, 16, 0.08);
+  --border-strong: rgba(18, 18, 16, 0.15);
+  --text: #121211;
+  --text-2: #52514e;
+  --text-3: #85837d;
+  --grid: #e6e5df;
+  --nav-bg: rgba(255, 255, 255, 0.72);
+
+  --c-tasks: #2a78d6;
+  --c-fitness: #eb6834;
+  --c-nutrition: #1baf7a;
+  --c-goals: #eda100;
+  --c-habits: #e87ba4;
+  --c-health: #4a3aa7;
+  --accent: #2a78d6;
+  --accent-ink: #1c5cab;
+  --on-accent: #ffffff;
+
+  --good: #0ca30c;
+  --good-ink: #006300;
+  --warn: #fab219;
+  --warn-ink: #8a5a00;
+  --serious: #ec835a;
+  --critical: #d03b3b;
+  --critical-ink: #b42323;
+  --demo: #b4408f;
+
+  --shadow-1: 0 1px 2px rgba(20, 20, 18, 0.04), 0 1px 1px rgba(20, 20, 18, 0.03);
+  --shadow-2: 0 1px 2px rgba(20, 20, 18, 0.05), 0 10px 28px -14px rgba(20, 20, 18, 0.18);
+  --highlight: inset 0 0 0 1px var(--border);
+  --glow: 0;
+
+  --radius-s: 8px;
+  --radius: 14px;
+  --radius-l: 20px;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --bg: #0a0b0c;
+    --bg-tint: #101113;
+    --surface: #141517;
+    --surface-2: #1a1b1e;
+    --surface-3: #222327;
+    --border: rgba(255, 255, 255, 0.07);
+    --border-strong: rgba(255, 255, 255, 0.13);
+    --text: #f2f2ef;
+    --text-2: #b8b7af;
+    --text-3: #84837d;
+    --grid: #26272a;
+    --nav-bg: rgba(16, 17, 19, 0.72);
+    --c-tasks: #3987e5;
+    --c-fitness: #d95926;
+    --c-nutrition: #199e70;
+    --c-goals: #c98500;
+    --c-habits: #d55181;
+    --c-health: #9085e9;
+    --accent: #3987e5;
+    --accent-ink: #86b6ef;
+    --good-ink: #2fc22f;
+    --warn-ink: #fab219;
+    --critical-ink: #f07a7a;
+    --demo: #e07cc0;
+    --shadow-1: none;
+    --shadow-2: 0 18px 40px -24px rgba(0, 0, 0, 0.9);
+    --highlight: inset 0 1px 0 rgba(255, 255, 255, 0.045), inset 0 0 0 1px var(--border);
+    --glow: 1;
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #0a0b0c;
+  --bg-tint: #101113;
+  --surface: #141517;
+  --surface-2: #1a1b1e;
+  --surface-3: #222327;
+  --border: rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(255, 255, 255, 0.13);
+  --text: #f2f2ef;
+  --text-2: #b8b7af;
+  --text-3: #84837d;
+  --grid: #26272a;
+  --nav-bg: rgba(16, 17, 19, 0.72);
+  --c-tasks: #3987e5;
+  --c-fitness: #d95926;
+  --c-nutrition: #199e70;
+  --c-goals: #c98500;
+  --c-habits: #d55181;
+  --c-health: #9085e9;
+  --accent: #3987e5;
+  --accent-ink: #86b6ef;
+  --good-ink: #2fc22f;
+  --warn-ink: #fab219;
+  --critical-ink: #f07a7a;
+  --demo: #e07cc0;
+  --shadow-1: none;
+  --shadow-2: 0 18px 40px -24px rgba(0, 0, 0, 0.9);
+  --highlight: inset 0 1px 0 rgba(255, 255, 255, 0.045), inset 0 0 0 1px var(--border);
+  --glow: 1;
+}
