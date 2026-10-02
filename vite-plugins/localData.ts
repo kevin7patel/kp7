@@ -13,8 +13,22 @@ import type { Plugin } from 'vite';
 
 type Next = (err?: unknown) => void;
 
+/** Only the dashboard page itself may trigger a sync (blocks cross-site POSTs to localhost). */
+function sameOrigin(req: IncomingMessage): boolean {
+  const site = req.headers['sec-fetch-site'];
+  if (site && site !== 'same-origin') return false;
+  const origin = req.headers.origin;
+  if (!origin) return site === 'same-origin';
+  try {
+    return new URL(origin).host === req.headers.host;
+  } catch {
+    return false;
+  }
+}
+
 function middleware(root: string) {
   const mode = process.env.KP7_MODE ?? 'plain';
+  let syncing = false;
   return (req: IncomingMessage, res: ServerResponse, next: Next) => {
     const url = (req.url ?? '').split('?')[0]!;
     const send = (file: string) => {
@@ -31,9 +45,21 @@ function middleware(root: string) {
     if (url.endsWith('/data/dashboard.json')) return mode === 'plain' ? send(join(root, '.data', 'dashboard.json')) : send('/nonexistent');
     if (url.endsWith('/data/dashboard.enc.json')) return mode === 'none' ? send('/nonexistent') : send(join(root, '.data', 'publish', 'dashboard.enc.json'));
     if (url.endsWith('/api/sync') && req.method === 'POST') {
+      res.setHeader('content-type', 'application/json');
+      if (!sameOrigin(req)) {
+        res.statusCode = 403;
+        res.end(JSON.stringify({ ok: false, error: { code: 'forbidden', message: 'Sync can only be started from the dashboard itself.' } }));
+        return;
+      }
+      if (syncing) {
+        res.statusCode = 409;
+        res.end(JSON.stringify({ ok: false, error: { code: 'busy', message: 'A sync is already running.' } }));
+        return;
+      }
+      syncing = true;
       const child = spawn(process.execPath, ['--import', 'tsx', 'src/pipeline/run.ts'], { cwd: root, env: process.env, stdio: 'inherit' });
       child.on('exit', () => {
-        res.setHeader('content-type', 'application/json');
+        syncing = false;
         const status = join(root, '.data', 'status.json');
         res.end(existsSync(status) ? readFileSync(status) : JSON.stringify({ ok: false, error: { message: 'No status written' } }));
       });

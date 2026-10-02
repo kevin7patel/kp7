@@ -130,6 +130,13 @@ export class NotionApiSource implements SourceAdapter {
     return pages;
   }
 
+  /** Query a known data source directly (no database lookup needed). */
+  private async loadDataSource(databaseId: string, dataSourceId: string, name: string, entity: EntityKind): Promise<RawDataSource> {
+    const meta = await this.client.request<{ properties: Record<string, NotionPropertySchema> }>('GET', `/data_sources/${dataSourceId}`);
+    const pages = await this.queryAll(`/data_sources/${dataSourceId}/query`);
+    return { databaseId, dataSourceId, title: name, entity, origin: 'configured', schema: schemaFrom(meta.properties), rows: pages.map(toRow) };
+  }
+
   /** Load one configured database (all of its data sources). */
   private async loadDatabase(databaseId: string, name: string, entity: EntityKind, origin: RawDataSource['origin']): Promise<RawDataSource[]> {
     const db = await this.client.request<{
@@ -235,17 +242,30 @@ export class NotionApiSource implements SourceAdapter {
     const dataSources: RawDataSource[] = [];
     const configuredIds = new Set(notionConfig.databases.map((d) => compactId(d.id)));
 
-    for (const db of notionConfig.databases) {
+    const configured: { id: string; name: string; entity: EntityKind; dataSourceId?: string; required?: boolean }[] = notionConfig.databases;
+    for (const db of configured) {
       if (db.entity === 'ignore') continue;
       try {
-        dataSources.push(...(await this.loadDatabase(db.id, db.name, db.entity, 'configured')));
+        let loaded: RawDataSource[] | null = null;
+        if (db.dataSourceId) {
+          try {
+            loaded = [await this.loadDataSource(db.id, db.dataSourceId, db.name, db.entity)];
+          } catch (e) {
+            // Data-source endpoint unsupported or id stale → fall back to the database path.
+            if ((e as NotionApiError).status === 401) throw e;
+          }
+        }
+        dataSources.push(...(loaded ?? (await this.loadDatabase(db.id, db.name, db.entity, 'configured'))));
       } catch (e) {
         const err = e as NotionApiError;
-        // 401 means the token itself is bad: nothing else will work, so fail the sync loudly.
+        // A bad token, or a failing required source, fails the sync so the last good payload stays live.
         if (err.status === 401) throw err;
-        errors.push(`${db.name}: ${err.status === 404 ? 'not shared with the integration (404)' : err.message}`);
+        const msg = `${db.name}: ${err.status === 404 ? 'not shared with the integration (404)' : err.message}`;
+        if (db.required) throw Object.assign(new NotionApiError(msg, err.status ?? 0, err.code ?? 'required_source_failed'), { required: true });
+        errors.push(msg);
       }
     }
+    for (const ds of dataSources) configuredIds.add(compactId(ds.dataSourceId ?? ds.databaseId));
 
     const unmapped: { id: string; title: string }[] = [];
     if (notionConfig.autoDiscover) {

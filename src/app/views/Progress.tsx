@@ -32,7 +32,7 @@ export function Progress({ model }: { model: DashboardModel }) {
       <div className="grid">
         <Card className="span-8" title="Tasks completed per day" hint="28 days" color={DOMAIN_COLOR.tasks} right={<ProvenanceChip m={done} />}>
           {done.quality === 'missing' || !done.series ? (
-            <EmptyState title="Completion history needs task status" icon="progress">
+            <EmptyState title={model.capabilities.status ? "Completion history needs a completion date" : "Completion history needs task status"} icon="progress">
               {done.note}
             </EmptyState>
           ) : (

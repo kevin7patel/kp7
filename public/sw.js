@@ -4,7 +4,7 @@
  *   The cached data file is the *encrypted* envelope on public hosting.
  * - GitHub API and cross-origin requests: never cached.
  */
-const VERSION = 'v1';
+const VERSION = 'v2';
 const SHELL = `kp7-shell-${VERSION}`;
 const DATA = `kp7-data-${VERSION}`;
 const PRECACHE = ['./', './index.html', './manifest.webmanifest', './icons/icon.svg', './icons/icon-192.png'];
@@ -30,8 +30,11 @@ async function networkFirst(request, cacheName, cacheKey) {
     return res;
   } catch (err) {
     const hit = await cache.match(cacheKey || request);
-    if (hit) return hit;
-    throw err;
+    if (!hit) throw err;
+    // Mark cache fallbacks so the app can honestly say "Offline — showing cached data".
+    const headers = new Headers(hit.headers);
+    headers.set('x-kp7-from-cache', '1');
+    return new Response(await hit.blob(), { status: hit.status, statusText: hit.statusText, headers });
   }
 }
 

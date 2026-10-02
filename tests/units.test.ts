@@ -79,7 +79,7 @@ describe('areas', () => {
     expect(classifyArea('Staybridge pool permit renewal')).toBe('staybridge');
     expect(classifyArea('Tru lobby lamp')).toBe('tru');
     expect(classifyArea('Finish packing list')).toBe('travel');
-    expect(classifyArea('Buy new socks')).toBe('personal');
+    expect(classifyArea('Buy new socks')).toBe('unclassified'); // no signal → unclassified, never assumed personal
     expect(classifyArea('Update hotel signage', 'Tru: exterior refresh')).toBe('hotel');
     expect(classifyArea('Order replacement part', 'Staybridge: laundry room')).toBe('staybridge');
   });
@@ -96,5 +96,6 @@ describe('demo data', () => {
     expect(m.prs.length).toBeGreaterThan(0);
     expect(m.health.length).toBe(4);
     expect(m.habitHeatmap.length).toBe(84);
+    expect(m.metrics['projects.active']!.quality).toBe('demo');
   });
 });

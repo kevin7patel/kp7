@@ -36,6 +36,13 @@ export interface Task {
   /** 1 = highest. Null when no priority property exists. */
   priorityRank: number | null;
   owner: string | null;
+  /** Notion "List" (e.g. Kevin, Agent help, Later). */
+  list: string | null;
+  /** True for deferred lists (Later / Project): not part of the active workload. */
+  deferred: boolean;
+  /** Kevin's explicit Top 3 pick (1–3), if set. */
+  top3: number | null;
+  nextAction: string | null;
   waitingOnKevin: boolean | null;
   blocked: boolean | null;
   /** Explicit time-of-day bucket from Notion (e.g. "Afternoon"), if such a property exists. */
@@ -46,7 +53,7 @@ export interface Task {
   parentTitle: string | null;
   projectIds: string[];
   completedAt: string | null;
-  /** 'notion' = explicit completion date; 'derived' = last-edited time of a done task (proxy). */
+  /** Only an explicit completion-date property counts; last-edited time is never used as completion time. */
   completedAtSource: FieldSource;
   createdAt: string | null;
   lastEditedAt: string | null;
@@ -60,6 +67,10 @@ export interface Project {
   status: string | null;
   statusGroup: StatusGroup | null;
   area: string;
+  outcome: string | null;
+  targetDate: string | null;
+  /** Linked-task completion; null unless tasks carry Project relations (explicit denominator). */
+  linkedTasks: { total: number; done: number } | null;
   parentTitle: string | null;
   lastEditedAt: string | null;
   prov: Provenance;

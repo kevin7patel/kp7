@@ -1,5 +1,5 @@
 import { daysBetween, dayKey } from '../shared/dates';
-import type { Goal, MetricValue } from '../shared/types';
+import type { Goal, MetricValue, Project } from '../shared/types';
 import { mean, metric, missing, sourceLabel, type MetricContext } from './context';
 
 export interface GoalView {
@@ -52,5 +52,52 @@ export function goalMetrics(ctx: MetricContext): Record<string, MetricValue> {
           note: `${progresses.length} of ${active.length} goals have measurable progress.`,
         })
       : missing(ctx, { id: 'goals.progress', label: 'Goal progress', unit: '%', period: 'now', source: sourceLabel(ctx, db, [], 'goal'), calculation: 'Average progress.', note: 'Goals have no progress, start/current/target values yet.' });
+  return out;
+}
+
+export interface ProjectView {
+  project: Project;
+  daysLeft: number | null;
+  /** Linked-task completion ratio; null unless tasks carry Project relations. */
+  ratio: number | null;
+}
+
+/** Projects are the real outcome layer in V1: active first, then by target date, then title. */
+export function projectList(ctx: MetricContext): ProjectView[] {
+  return ctx.e.projects
+    .map((p) => ({
+      project: p,
+      daysLeft: p.targetDate ? daysBetween(ctx.today, dayKey(p.targetDate, ctx.tz)) : null,
+      ratio: p.linkedTasks && p.linkedTasks.total > 0 ? p.linkedTasks.done / p.linkedTasks.total : null,
+    }))
+    .sort(
+      (a, b) =>
+        (a.project.statusGroup === 'done' ? 1 : 0) - (b.project.statusGroup === 'done' ? 1 : 0) ||
+        (a.daysLeft ?? 9e9) - (b.daysLeft ?? 9e9) ||
+        a.project.title.localeCompare(b.project.title),
+    );
+}
+
+const undatedNote = (n: number) => (n === 0 ? 'Every active project has a target date.' : `${n} active project${n === 1 ? ' has' : 's have'} no target date.`);
+
+export function projectMetrics(ctx: MetricContext): Record<string, MetricValue> {
+  const db = ctx.e.projects[0]?.prov.database ?? 'Projects';
+  const src = (fields: string[]) => sourceLabel(ctx, db, fields, 'project');
+  if (!ctx.e.projects.length) {
+    const note = `No rows found in ${db}.`;
+    return {
+      'projects.active': missing(ctx, { id: 'projects.active', label: 'Active projects', unit: 'projects', period: 'now', source: src([]), calculation: 'Projects not in a done status.', note }),
+      'projects.dated': missing(ctx, { id: 'projects.dated', label: 'With target date', unit: 'projects', period: 'now', source: src([]), calculation: 'Active projects with a Target date.', note }),
+    };
+  }
+  const statusKnown = ctx.e.projects.some((p) => p.statusGroup != null);
+  const active = ctx.e.projects.filter((p) => p.statusGroup !== 'done');
+  const out: Record<string, MetricValue> = {};
+  out['projects.active'] = statusKnown
+    ? metric(ctx, { id: 'projects.active', label: 'Active projects', value: active.length, unit: 'projects', period: 'now', source: src(['status']), calculation: 'Projects whose Status is not Done.', quality: 'real', note: `${ctx.e.projects.length} projects in total.` })
+    : missing(ctx, { id: 'projects.active', label: 'Active projects', unit: 'projects', period: 'now', source: src([]), calculation: 'Projects not in a done status.', note: 'Projects have no Status property.' });
+  out['projects.dated'] = ctx.demo || ctx.fieldNames.project?.targetDate
+    ? metric(ctx, { id: 'projects.dated', label: 'With target date', value: active.filter((p) => p.targetDate).length, unit: 'projects', ratio: active.length ? active.filter((p) => p.targetDate).length / active.length : null, period: 'now', source: src(['targetDate']), calculation: 'Active projects with a Target date set.', quality: 'real', note: undatedNote(active.filter((p) => !p.targetDate).length) })
+    : missing(ctx, { id: 'projects.dated', label: 'With target date', unit: 'projects', period: 'now', source: src([]), calculation: 'Active projects with a Target date.', note: 'Projects have no Target date property.' });
   return out;
 }

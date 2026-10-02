@@ -1,11 +1,24 @@
+# Secrets and machine-local configuration
+.env
+.env.*
+!.env.example
+.claude/settings.local.json
+.mcp.local.json
+
+# Personal Notion data never goes into git (this repo is public).
+.data/
+public/data/
+
+# QA artifacts (synthetic or local-only screenshots)
+.artifacts/
+screenshots/
+playwright-report/
+test-results/
+
+# Generated
 node_modules/
 dist/
 coverage/
 *.tsbuildinfo
-# Personal Notion data never goes into git (this repo is public).
-.data/
-public/data/
-.env
-.env.*
-!.env.example
-screenshots/
+*.log
+.DS_Store

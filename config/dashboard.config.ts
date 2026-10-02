@@ -7,7 +7,7 @@ export interface AreaRule {
   id: string;
   label: string;
   /** Filter group used by the All / Hotels / Personal switch. */
-  group: 'hotels' | 'personal';
+  group: 'hotels' | 'personal' | 'unclassified';
   /** Keyword rule applied to titles when Notion has no Area/Property field. First match wins. */
   match: RegExp;
 }
@@ -15,7 +15,7 @@ export interface AreaRule {
 export const dashboardConfig = {
   owner: 'Kevin',
   /** Pipeline timezone (the browser uses the device timezone for "today"). */
-  timezone: 'America/Chicago',
+  timezone: (typeof process !== 'undefined' && process.env?.DASHBOARD_TIMEZONE) || 'America/Chicago',
 
   /** Public GitHub repo that hosts the app and runs the scheduled sync. */
   github: { owner: 'kevin7patel', repo: 'kp7', syncWorkflow: 'sync.yml', ref: 'main' },
@@ -48,7 +48,10 @@ export const dashboardConfig = {
     { id: 'health', label: 'Health', group: 'personal', match: /doctor|dentist|medicine|pharmacy|\bgym\b|fitness|workout|nutrition/i },
     { id: 'finance', label: 'Finance', group: 'personal', match: /cards?\b|checks\b|billing|\bbill\b|refund|dispute|insur|subscription|bank|\btax/i },
     { id: 'hotel', label: 'Hotel ops', group: 'hotels', match: /hilton|hotel|\bstr\b|servsafe|lightstay|guest|chargeback|rfp|dbpr|merchant|sales lead|\bpool\b|breakfast|uniform|roofing|time-?clock/i },
-    { id: 'personal', label: 'Personal', group: 'personal', match: /[\s\S]*/ },
+    // Explicit Notion value "Personal" maps here; keyword rules never default to it.
+    { id: 'personal', label: 'Personal', group: 'personal', match: /^personal$/i },
+    // No signal → unclassified (not personal). Shown under "All" only.
+    { id: 'unclassified', label: 'Unclassified', group: 'unclassified', match: /[\s\S]*/ },
   ] satisfies AreaRule[],
 
   /**

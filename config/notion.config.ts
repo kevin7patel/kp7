@@ -33,17 +33,37 @@ export interface DatabaseConfig {
   id: string;
   name: string;
   entity: EntityKind;
+  /** Data-source id (2025-09 API). Distinct from the database id; queried directly when set. */
+  dataSourceId?: string;
+  /** A failing required source fails the sync, so the last good payload stays live. */
+  required?: boolean;
   note?: string;
 }
+
+const env = (k: string): string | undefined => (typeof process !== 'undefined' ? process.env?.[k] || undefined : undefined);
 
 export const notionConfig = {
   /** Data-source era API (falls back to 2022-06-28 automatically). */
   apiVersion: '2025-09-03',
 
   databases: [
-    { id: 'fa4ae1d8bafd4aa6bfc4faf35cbb1599', name: 'Tasks', entity: 'task', note: 'HOTELS OPS / GM Command Center — work and personal tasks maintained by Kevin and agents' },
-    { id: '35b1e5ca4ec9453392f548e8955323d5', name: 'Projects', entity: 'project', note: 'Kevin’s Life & Hotel Command Center' },
-    { id: '32d38b58768580eb878ac592696f61f3', name: 'Goals Tracker', entity: 'goal', note: 'Contains Notion template sample rows as of 2026-10-02' },
+    {
+      id: 'fa4ae1d8bafd4aa6bfc4faf35cbb1599',
+      name: 'Tasks',
+      entity: 'task',
+      dataSourceId: env('NOTION_TASKS_DATA_SOURCE_ID') ?? 'ed47cf5c-9013-48bd-8c76-d3fd8806caff',
+      required: true,
+      note: 'HOTELS OPS / GM Command Center — work and personal tasks maintained by Kevin and agents',
+    },
+    {
+      id: '35b1e5ca4ec9453392f548e8955323d5',
+      name: 'Projects',
+      entity: 'project',
+      dataSourceId: env('NOTION_PROJECTS_DATA_SOURCE_ID') ?? 'a862fc2e-e045-45a0-972b-6592df011baa',
+      required: true,
+      note: 'Real longer-term outcomes (Outcome, Status, Target date)',
+    },
+    { id: '32d38b58768580eb878ac592696f61f3', name: 'Goals Tracker', entity: 'goal', dataSourceId: '32d38b58-7685-8064-90bb-000b08e4d5ae', note: 'Unconfirmed example/template rows — excluded in V1' },
     { id: '8f041be0615e4cec82c49eccff7ab5d0', name: 'Credit Card Benefits Tracker', entity: 'ignore', note: 'Finance — mapped, not shown on the personal dashboard in v1' },
     { id: 'b5738b587685826e8419810af519df60', name: 'Travel Packing List', entity: 'ignore', note: 'Travel reference' },
   ] satisfies DatabaseConfig[],
@@ -87,7 +107,8 @@ export const notionConfig = {
     todo: /to.?do|not started|backlog|inbox|next|open|planned|new/i,
   },
   /** Status / owner text meaning "this needs Kevin" (R14 "Waiting on you"). */
-  waitingOnKevin: /kevin|needs? (review|decision|approval|input)|approval|decision/i,
+  /** Explicit "needs Kevin" wording only. A plain "Waiting" status means waiting on anyone. */
+  waitingOnKevin: /waiting on kevin|needs? kevin|kevin to (decide|approve|review)|needs? (decision|approval)/i,
 
   priorityRank: [
     { match: /urgent|critical|p0|highest|🔥/i, rank: 1 },
@@ -96,14 +117,31 @@ export const notionConfig = {
     { match: /low|p3|someday/i, rank: 4 },
   ],
 
+  /**
+   * Tasks scope rules (verified 2026-10-02): the "All active" view excludes Done and
+   * List = Later / Project. Source = Test rows are test data and are dropped.
+   */
+  taskScope: {
+    deferredLists: ['Later', 'Project'],
+    excludeSourceValues: ['Test'],
+  },
+
+  /** Goals Tracker holds unconfirmed example rows; V1 shows no goal percentages from it until Kevin confirms. */
+  goalsTrackerConfirmed: false,
+
   /** Titles that ship with Notion templates — never shown as Kevin's goals. */
   templateSampleTitles: ['Increase sales by 20%', 'Acquire 20K new users', 'Launch 3 new products'],
 
   fields: {
     task: {
       title: { types: ['title'] },
-      status: { types: ['status', 'select'], names: [/^status$/i, /status|state|stage/i] },
+      // Kevin's Tasks keep state in a "Progress" select ("Status" is a formula).
+      status: { types: ['status', 'select'], names: [/^status$/i, /^progress$/i, /status|state|stage/i] },
       done: { types: ['checkbox'], names: [/^(done|complete|completed)$/i, /done|complete/i] },
+      list: { types: ['select'], names: [/^list$/i] },
+      top3: { types: ['select', 'number'], names: [/^top ?3$/i, /top ?(3|three)/i] },
+      nextAction: { types: ['rich_text'], names: [/^next action$/i, /next (action|step)/i] },
+      source: { types: ['select'], names: [/^source$/i] },
       due: { types: ['date'], names: [/^due/i, /^(?!.*(complet|done|finish|creat|edit|start)).*(due|deadline|do date|when|date)/i] },
       priority: { types: ['select', 'status'], names: [/priority|importance|urgency/i] },
       owner: { types: ['people', 'select', 'multi_select', 'rich_text'], names: [/owner|assignee|assigned|agent|who/i] },
@@ -118,7 +156,9 @@ export const notionConfig = {
     project: {
       title: { types: ['title'] },
       status: { types: ['status', 'select'], names: [/status|state|stage/i] },
-      area: { types: ['select', 'multi_select'], names: [/area|property|hotel|category/i] },
+      area: { types: ['select', 'multi_select'], names: [/^area$/i, /area|property|hotel|category/i] },
+      outcome: { types: ['rich_text'], names: [/outcome|goal|result/i] },
+      targetDate: { types: ['date'], names: [/target|due|deadline/i] },
     },
     goal: {
       title: { types: ['title'] },

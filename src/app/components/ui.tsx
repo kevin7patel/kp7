@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { areaLabel } from '../../shared/areas';
-import type { MetricValue, Quality, Task } from '../../shared/types';
-import { dueLabel, fmtDateTime, fmtNum, STATUS_META } from '../format';
-import { Sparkline } from './charts';
+import type { Project, MetricValue, Quality, Task } from '../../shared/types';
+import { dueLabel, fmtDateTime, fmtNum, shortDay, STATUS_META } from '../format';
+import { Meter, Sparkline } from './charts';
 import { Icon } from './Icon';
 
 export function Card({ title, hint, icon, color, right, children, className = '', flat }: { title?: ReactNode; hint?: ReactNode; icon?: string; color?: string; right?: ReactNode; children: ReactNode; className?: string; flat?: boolean }) {
@@ -173,12 +173,47 @@ export function TaskRow({ t, today, tz, reason, rank, showArea = true, showStatu
         )}
       </Title>
       <span className="meta">
+        {t.top3 != null && !compact && <span className="pill top3" title={`Kevin’s Top 3 · #${t.top3}`}>Top 3 · {t.top3}</span>}
         {showArea && !compact && <span className="tag">{areaLabel(t.area)}</span>}
         {due && !compact && <span className="pill num">{due}</span>}
         {showStatus && status && (
           <span className="pill">
             <span className="d" style={{ background: status.color }} />
             {t.status ?? status.label}
+          </span>
+        )}
+      </span>
+    </div>
+  );
+}
+
+/** A Notion project: status, area, outcome, target date and (when tasks link to it) completion. */
+export function ProjectRow({ p, daysLeft, ratio, color, compact = false }: { p: Project; daysLeft: number | null; ratio: number | null; color: string; compact?: boolean }) {
+  const status = p.statusGroup ? STATUS_META[p.statusGroup] : null;
+  const Title = p.url ? 'a' : 'span';
+  const target = p.targetDate ? `${shortDay(p.targetDate)}${daysLeft != null && p.statusGroup !== 'done' ? (daysLeft >= 0 ? ` · ${daysLeft}d left` : ` · ${-daysLeft}d past`) : ''}` : 'No target date';
+  const sub = compact ? [areaLabel(p.area), p.targetDate ? target : null].filter(Boolean).join(' · ') : p.outcome;
+  return (
+    <div className="row project">
+      <Title className="title" {...(p.url ? { href: p.url, target: '_blank', rel: 'noreferrer' } : {})} title={p.title}>
+        {p.title}
+        {sub && <small>{sub}</small>}
+        {!compact && ratio != null && p.linkedTasks && (
+          <span className="p-meter">
+            <Meter ratio={ratio} color={color} label={`${p.title}: ${p.linkedTasks.done} of ${p.linkedTasks.total} linked tasks done`} />
+            <span className="num">
+              {p.linkedTasks.done}/{p.linkedTasks.total} tasks
+            </span>
+          </span>
+        )}
+      </Title>
+      <span className="meta">
+        {!compact && <span className="tag">{areaLabel(p.area)}</span>}
+        {!compact && <span className={`pill num${p.targetDate ? '' : ' muted'}`}>{target}</span>}
+        {(status || p.status) && (
+          <span className="pill">
+            {status && <span className="d" style={{ background: status.color }} />}
+            {p.status ?? status?.label}
           </span>
         )}
       </span>

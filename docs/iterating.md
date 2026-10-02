@@ -10,6 +10,8 @@ where each kind of change lands.
 | “Add another health metric” | Nothing — every number column in a health/body database becomes a card. Name/unit mapping: `healthMetrics`. |
 | “Set my protein / calorie / workout targets” | `config/dashboard.config.ts` → `targets`. Rings switch from value-only to target-vs-actual. |
 | “Change how goals are calculated” | `src/metrics/goals.ts` (progress = Notion progress, else (current − start) ÷ (target − start)). |
+| “Show more about projects” | `projectList` / `projectMetrics` in `src/metrics/goals.ts`; the row is `ProjectRow` in `src/app/components/ui.tsx`. |
+| “Change what counts as active / test / deferred” | `notionConfig.taskScope` (`deferredLists`, `excludeSourceValues`). |
 | “Move / remove / combine sections” | The view files in `src/app/views/` are flat lists of cards on a 12-column grid (`span-3` … `span-12`). |
 | “Make this metric larger” | Swap `StatTile` for a hero ring/number, or change its `span-*` class. |
 | “Change this visualization” | `src/app/components/charts.tsx` (Ring, Sparkline, Columns, Heatmap, DotStrip, Meter, HBars). |
@@ -22,8 +24,9 @@ where each kind of change lands.
 npm run verify          # lint + typecheck + tests + build
 npm run sync -- --source=snapshot   # or with NOTION_TOKEN for live data
 npm run build && npx vite preview --port 4173 &
-npm run screenshots     # light/dark × MacBook/iPad/iPhone, fails on overflow or console errors
+npm run screenshots     # light/dark × 1440×900 … 375×667 → .artifacts/; fails on overflow or console errors
 npm run screenshots -- --demo       # every chart with synthetic data
+npm run states          # 14 synthetic freshness/navigation/offline scenarios
 ```
 
 ## Refreshing the snapshot without a token

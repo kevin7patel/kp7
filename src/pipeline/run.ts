@@ -67,6 +67,7 @@ async function stage<T>(stages: StageResult[], name: StageResult['stage'], fn: (
 
 /** Errors are reduced to a code + generic message so nothing sensitive reaches public logs. */
 function publicError(err: unknown): { code: string; message: string } {
+  if ((err as { required?: boolean }).required) return { code: 'required_source_failed', message: (err as Error).message };
   if (err instanceof NotionApiError) {
     const map: Record<number, string> = { 401: 'Notion rejected the token (401). Re-create the integration secret.', 403: 'Integration lacks access (403).', 404: 'Database not shared with the integration (404).' };
     return { code: `notion_${err.status}`, message: map[err.status] ?? `Notion API error ${err.status}` };
@@ -117,7 +118,7 @@ export async function runPipeline(o: RunOptions): Promise<RunResult> {
     });
 
     // Invariants gate publication: a payload that fails them is never encrypted/published.
-    const verification = verify(payload, validated.bundle, o.now);
+    const verification = verify(payload, validated.bundle, o.now, norm.excluded);
     payload.verification = verification;
 
     let published = false;
@@ -132,7 +133,8 @@ export async function runPipeline(o: RunOptions): Promise<RunResult> {
       if (!o.key) throw Object.assign(new Error('DASHBOARD_KEY is not set'), { code: 'no_key' });
       await mkdir(dirname(encPath), { recursive: true });
       // Content hash ignores timestamps so unchanged Notion data does not produce a new commit.
-      const contentHash = await hmacHex(JSON.stringify({ e: payload.entities, f: payload.facts, s: payload.sourceMap, w: payload.sync.warnings }), o.key);
+      const stableFacts = payload.facts.map(({ capturedAt: _volatile, ...f }) => f);
+      const contentHash = await hmacHex(JSON.stringify({ e: payload.entities, f: stableFacts, s: payload.sourceMap, w: payload.sync.warnings }), o.key);
       const hashPath = join(o.outDir, 'publish', 'content.hmac');
       const previous = existsSync(hashPath) ? (await readFile(hashPath, 'utf8')).trim() : null;
       changed = previous !== contentHash;

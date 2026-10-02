@@ -1,5 +1,5 @@
 // Visual + behavioural verification against a running server (default: vite preview).
-//   node scripts/screenshots.mjs [baseUrl] [--demo] [--routes=today,tasks] [--out=screenshots/x]
+//   node scripts/screenshots.mjs [baseUrl] [--demo] [--routes=today,tasks] [--out=.artifacts/screenshots/x] [--viewports=desktop-1440,phone-390]
 // Checks per page: console errors, horizontal overflow, and writes a screenshot.
 import { mkdirSync } from 'node:fs';
 import { chromium } from 'playwright-core';
@@ -8,18 +8,20 @@ const args = process.argv.slice(2);
 const base = args.find((a) => !a.startsWith('--')) ?? 'http://localhost:4173/';
 const demo = args.includes('--demo');
 const routes = (args.find((a) => a.startsWith('--routes='))?.split('=')[1] ?? 'today,tasks,progress,body/fitness,body/nutrition,body/health,goals,sources,settings').split(',');
-const out = args.find((a) => a.startsWith('--out='))?.split('=')[1] ?? `screenshots/${demo ? 'demo' : 'real'}`;
+const out = args.find((a) => a.startsWith('--out='))?.split('=')[1] ?? `.artifacts/screenshots/${demo ? 'demo' : 'real'}`;
 const themes = (args.find((a) => a.startsWith('--themes='))?.split('=')[1] ?? 'light,dark').split(',');
 const only = args.find((a) => a.startsWith('--viewports='))?.split('=')[1]?.split(',');
 const key = args.find((a) => a.startsWith('--key='))?.split('=')[1];
 mkdirSync(out, { recursive: true });
 
+// Primary QA sizes per the visual-qa skill: 1440×900 desktop and 390×844 phone, plus a narrow breakpoint.
 const viewports = [
+  { name: 'desktop-1440', width: 1440, height: 900, mobile: false },
   { name: 'macbook-14', width: 1512, height: 982, mobile: false },
   { name: 'macbook-13', width: 1280, height: 800, mobile: false },
   { name: 'ipad', width: 820, height: 1180, mobile: true },
-  { name: 'iphone-15', width: 393, height: 852, mobile: true },
-  { name: 'iphone-se', width: 375, height: 667, mobile: true },
+  { name: 'phone-390', width: 390, height: 844, mobile: true },
+  { name: 'narrow-375', width: 375, height: 667, mobile: true },
 ].filter((v) => !only || only.includes(v.name));
 
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });

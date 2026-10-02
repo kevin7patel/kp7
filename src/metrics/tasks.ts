@@ -5,7 +5,8 @@ import { metric, missing, sourceLabel, type MetricContext } from './context';
 
 export type Bucket = 'overdue' | 'today' | 'afternoon' | 'tonight';
 
-const isOpen = (t: Task) => t.statusGroup !== null && t.statusGroup !== 'done';
+/** Active workload: not done, and not on a deferred list (Later / Project). */
+const isOpen = (t: Task) => t.statusGroup !== null && t.statusGroup !== 'done' && !t.deferred;
 const dueDay = (t: Task, tz: string) => (t.due ? dayKey(t.due, tz) : null);
 
 export function hasStatus(ctx: MetricContext): boolean {
@@ -62,7 +63,11 @@ export function focusNext(ctx: MetricContext, limit = 5): FocusItem[] {
     const d = dueDay(t, ctx.tz);
     let score = 0;
     let reason = '';
-    if (d && d < ctx.today) {
+    if (t.top3 != null) {
+      // Kevin's own Top 3 picks always lead.
+      score = 3000 - t.top3;
+      reason = `Top 3 · #${t.top3}`;
+    } else if (d && d < ctx.today) {
       const days = daysBetween(d, ctx.today);
       score = 1000 + days;
       reason = `Overdue ${days}d`;
@@ -89,7 +94,7 @@ export function focusNext(ctx: MetricContext, limit = 5): FocusItem[] {
       score += 120;
       reason ||= 'High priority';
     }
-    if (score > 0) items.push({ task: t, reason, score });
+    if (score > 0) items.push({ task: t, reason: t.nextAction ? `${reason} — ${t.nextAction}` : reason, score });
   }
   return items.sort((a, b) => b.score - a.score || (a.task.due ?? '9').localeCompare(b.task.due ?? '9')).slice(0, limit);
 }
@@ -119,6 +124,28 @@ export function recentlyCompleted(ctx: MetricContext, limit = 8): Task[] {
     .filter((t) => t.statusGroup === 'done' && t.completedAt)
     .sort((a, b) => (b.completedAt ?? '').localeCompare(a.completedAt ?? ''))
     .slice(0, limit);
+}
+
+export function statusCounts(tasks: Task[]): { label: string; count: number }[] {
+  const m = new Map<string, number>();
+  for (const t of tasks) m.set(t.status ?? 'No status', (m.get(t.status ?? 'No status') ?? 0) + 1);
+  return [...m.entries()].map(([label, count]) => ({ label, count })).sort((a, b) => b.count - a.count);
+}
+
+export function priorityCounts(tasks: Task[]): { label: string; count: number }[] {
+  const m = new Map<string, { count: number; rank: number }>();
+  for (const t of tasks) {
+    const k = t.priority ?? 'No priority';
+    const cur = m.get(k) ?? { count: 0, rank: t.priorityRank ?? 99 };
+    m.set(k, { count: cur.count + 1, rank: cur.rank });
+  }
+  return [...m.entries()].sort((a, b) => a[1].rank - b[1].rank).map(([label, v]) => ({ label, count: v.count }));
+}
+
+export function topThree(ctx: MetricContext): Task[] {
+  return openTasks(ctx)
+    .filter((t) => t.top3 != null)
+    .sort((a, b) => a.top3! - b.top3!);
 }
 
 export function areaCounts(tasks: Task[]): { area: string; count: number }[] {
@@ -168,46 +195,62 @@ export function taskMetrics(ctx: MetricContext): Record<string, MetricValue> {
       })
     : missing(ctx, { id: 'tasks.dueToday', label: 'Due today', unit: 'tasks', period: 'today', source: sourceLabel(ctx, db), calculation: 'Open tasks due today.', note: statusOk ? noDue : noStatus });
 
-  const waitingKnown = ctx.e.tasks.some((t) => t.waitingOnKevin !== null);
-  const waiting = open.filter((t) => t.waitingOnKevin);
+  const waitingExplicit = ctx.taskFields.waitingOnKevin === 'notion';
+  const waiting = waitingExplicit ? open.filter((t) => t.waitingOnKevin) : open.filter((t) => t.statusGroup === 'waiting');
   const oldest = waiting.reduce<number | null>((max, t) => {
     if (!t.lastEditedAt) return max;
     const age = (ctx.now.getTime() - Date.parse(t.lastEditedAt)) / 86_400_000;
     return max === null || age > max ? age : max;
   }, null);
-  out['tasks.waitingOnKevin'] = waitingKnown
-    ? metric(ctx, {
-        id: 'tasks.waitingOnKevin',
-        label: 'Waiting on you',
-        value: waiting.length,
-        unit: 'items',
-        period: 'now',
-        source: sourceLabel(ctx, db, ['status', 'waitingOnKevin', 'owner']),
-        calculation: 'Open tasks flagged as needing Kevin (checkbox, or status/owner text such as "Needs Kevin", "Decision", "Approval").',
-        note: oldest !== null ? `Oldest untouched for ${Math.floor(oldest)}d (by last edit).` : undefined,
-      })
-    : missing(ctx, { id: 'tasks.waitingOnKevin', label: 'Waiting on you', unit: 'items', period: 'now', source: sourceLabel(ctx, db), calculation: 'Open tasks needing Kevin’s decision.', note: noStatus });
+  out['tasks.waitingOnKevin'] = !statusOk
+    ? missing(ctx, { id: 'tasks.waitingOnKevin', label: 'Waiting on you', unit: 'items', period: 'now', source: sourceLabel(ctx, db), calculation: 'Open tasks needing Kevin’s decision.', note: noStatus })
+    : waitingExplicit
+      ? metric(ctx, {
+          id: 'tasks.waitingOnKevin',
+          label: 'Waiting on you',
+          value: waiting.length,
+          unit: 'items',
+          period: 'now',
+          source: sourceLabel(ctx, db, ['status', 'waitingOnKevin']),
+          calculation: 'Open tasks explicitly flagged as needing Kevin (checkbox, or a status that names Kevin / a decision / an approval).',
+          note: oldest !== null ? `Oldest untouched ${Math.floor(oldest)}d (by last edit).` : undefined,
+        })
+      : metric(ctx, {
+          id: 'tasks.waitingOnKevin',
+          label: 'Waiting',
+          value: waiting.length,
+          unit: 'items',
+          period: 'now',
+          source: sourceLabel(ctx, db, ['status']),
+          calculation: 'Active tasks whose status is Waiting (on anyone). Notion has no field that marks items waiting on Kevin specifically.',
+          note: 'Waiting on anyone — not only you',
+        });
 
-  out['tasks.blocked'] = statusOk
+  out['tasks.highPriority'] =
+    ctx.taskFields.priority === 'notion'
+      ? metric(ctx, { id: 'tasks.highPriority', label: 'Top priority open', value: open.filter((t) => t.priorityRank === 1).length, unit: 'tasks', period: 'now', source: sourceLabel(ctx, db, ['priority']), calculation: 'Active tasks with the highest Priority option (e.g. P1 · High).' })
+      : missing(ctx, { id: 'tasks.highPriority', label: 'Top priority open', unit: 'tasks', period: 'now', source: sourceLabel(ctx, db), calculation: 'Active tasks with the highest priority.', note: 'No Priority property readable.' });
+
+  out['tasks.blocked'] = statusOk && ctx.taskFields.blocked !== 'unavailable'
     ? metric(ctx, { id: 'tasks.blocked', label: 'Blockers', value: open.filter((t) => t.blocked).length, unit: 'items', period: 'now', source: sourceLabel(ctx, db, ['status', 'blocked']), calculation: 'Open tasks with a Blocked status or checkbox.' })
-    : missing(ctx, { id: 'tasks.blocked', label: 'Blockers', unit: 'items', period: 'now', source: sourceLabel(ctx, db), calculation: 'Blocked open tasks.', note: noStatus });
+    : missing(ctx, { id: 'tasks.blocked', label: 'Blockers', unit: 'items', period: 'now', source: sourceLabel(ctx, db), calculation: 'Blocked open tasks.', note: statusOk ? 'Notion has no Blocked status or checkbox, so blockers are unknown (not zero).' : noStatus });
 
   out['tasks.inProgress'] = statusOk
     ? metric(ctx, { id: 'tasks.inProgress', label: 'Working on', value: open.filter((t) => t.statusGroup === 'in_progress').length, unit: 'tasks', period: 'now', source: sourceLabel(ctx, db, ['status']), calculation: 'Tasks in an "In progress" status group.' })
     : missing(ctx, { id: 'tasks.inProgress', label: 'Working on', unit: 'tasks', period: 'now', source: sourceLabel(ctx, db), calculation: 'Tasks in progress.', note: noStatus });
 
-  const proxy = ctx.taskFields.completedAt === 'derived';
-  const proxyNote = proxy ? 'Completion date = last-edited time of done tasks (proxy; add a "Completed" date property for exact dates).' : undefined;
+  const noCompletion =
+    'No completion-date property in Notion. Done is a current state, not a dated event, so completed-today, weekly completion and streaks are unavailable. Add a “Completed” date property to enable them.';
   const done = completedOn(ctx);
   const days28 = dayRange(addDays(ctx.today, -27), ctx.today);
   const series = days28.map((date) => ({ date, value: done.get(date)?.length ?? 0 }));
   const done7 = series.slice(-7).reduce((a, s) => a + (s.value ?? 0), 0);
   const prev7 = series.slice(-14, -7).reduce((a, s) => a + (s.value ?? 0), 0);
-  const completionOk = statusOk && ctx.taskFields.completedAt !== 'unavailable';
+  const completionOk = statusOk && ctx.taskFields.completedAt === 'notion';
 
   out['tasks.doneToday'] = completionOk
-    ? metric(ctx, { id: 'tasks.doneToday', label: 'Done today', value: done.get(ctx.today)?.length ?? 0, unit: 'tasks', period: 'today', source: sourceLabel(ctx, db, ['status', 'completedAt']), calculation: 'Tasks marked done today.', note: proxyNote })
-    : missing(ctx, { id: 'tasks.doneToday', label: 'Done today', unit: 'tasks', period: 'today', source: sourceLabel(ctx, db), calculation: 'Tasks completed today.', note: noStatus });
+    ? metric(ctx, { id: 'tasks.doneToday', label: 'Done today', value: done.get(ctx.today)?.length ?? 0, unit: 'tasks', period: 'today', source: sourceLabel(ctx, db, ['status', 'completedAt']), calculation: 'Tasks marked done today.' })
+    : missing(ctx, { id: 'tasks.doneToday', label: 'Done today', unit: 'tasks', period: 'today', source: sourceLabel(ctx, db), calculation: 'Tasks completed today.', note: statusOk ? noCompletion : noStatus });
 
   out['tasks.done7d'] = completionOk
     ? metric(ctx, {
@@ -220,9 +263,8 @@ export function taskMetrics(ctx: MetricContext): Record<string, MetricValue> {
         calculation: 'Tasks completed in the last 7 days; sparkline shows daily completions over 28 days.',
         series,
         delta: { value: done7 - prev7, period: 'vs previous 7 days', goodWhen: 'up' },
-        note: proxyNote,
       })
-    : missing(ctx, { id: 'tasks.done7d', label: 'Completed · 7 days', unit: 'tasks', period: 'last 7 days', source: sourceLabel(ctx, db), calculation: 'Tasks completed in the last 7 days.', note: noStatus });
+    : missing(ctx, { id: 'tasks.done7d', label: 'Completed · 7 days', unit: 'tasks', period: 'last 7 days', source: sourceLabel(ctx, db), calculation: 'Tasks completed in the last 7 days.', note: statusOk ? noCompletion : noStatus });
 
   const dueLast7 = open.filter((t) => {
     const d = dueDay(t, ctx.tz);
@@ -239,8 +281,7 @@ export function taskMetrics(ctx: MetricContext): Record<string, MetricValue> {
           period: 'last 7 days',
           source: sourceLabel(ctx, db, ['status', 'due', 'completedAt']),
           calculation: 'Completed in last 7 days ÷ (completed in last 7 days + open tasks that were due in the last 7 days).',
-          note: proxyNote,
-        })
+          })
       : missing(ctx, {
           id: 'tasks.completionRate7d',
           label: 'Weekly completion',
@@ -248,14 +289,24 @@ export function taskMetrics(ctx: MetricContext): Record<string, MetricValue> {
           period: 'last 7 days',
           source: sourceLabel(ctx, db),
           calculation: 'Completed ÷ (completed + due-but-open) over 7 days.',
-          note: !completionOk ? noStatus : !dueOk ? noDue : 'Nothing completed or due in the last 7 days.',
+          note: !statusOk ? noStatus : !completionOk ? noCompletion : !dueOk ? noDue : 'Nothing completed or due in the last 7 days.',
         });
 
   let streak = 0;
   for (let k = done.has(ctx.today) ? ctx.today : addDays(ctx.today, -1); done.has(k); k = addDays(k, -1)) streak++;
   out['tasks.streak'] = completionOk
-    ? metric(ctx, { id: 'tasks.streak', label: 'Completion streak', value: streak, unit: 'days', period: 'current', source: sourceLabel(ctx, db, ['status', 'completedAt']), calculation: 'Consecutive days (ending today or yesterday) with at least one completed task.', note: proxyNote })
-    : missing(ctx, { id: 'tasks.streak', label: 'Completion streak', unit: 'days', period: 'current', source: sourceLabel(ctx, db), calculation: 'Consecutive days with a completion.', note: noStatus });
+    ? metric(ctx, { id: 'tasks.streak', label: 'Completion streak', value: streak, unit: 'days', period: 'current', source: sourceLabel(ctx, db, ['status', 'completedAt']), calculation: 'Consecutive days (ending today or yesterday) with at least one completed task.' })
+    : missing(ctx, { id: 'tasks.streak', label: 'Completion streak', unit: 'days', period: 'current', source: sourceLabel(ctx, db), calculation: 'Consecutive days with a completion.', note: statusOk ? noCompletion : noStatus });
+
+  const doneNow = ctx.e.tasks.filter((t) => t.statusGroup === 'done').length;
+  out['tasks.doneNow'] = statusOk
+    ? metric(ctx, { id: 'tasks.doneNow', label: 'Marked done', value: doneNow, unit: 'tasks', period: 'current state', source: sourceLabel(ctx, db, ['done', 'status']), calculation: 'Tasks currently marked Done in the synced scope. A current state, not dated completion history.', quality: 'real' })
+    : missing(ctx, { id: 'tasks.doneNow', label: 'Marked done', unit: 'tasks', period: 'current state', source: sourceLabel(ctx, db), calculation: 'Tasks marked Done.', note: noStatus });
+  const deferredCount = ctx.e.tasks.filter((t) => t.deferred && t.statusGroup !== 'done').length;
+  out['tasks.deferred'] =
+    ctx.taskFields.list === 'notion' && ctx.source.kind !== 'notion-mcp-snapshot'
+      ? metric(ctx, { id: 'tasks.deferred', label: 'Deferred', value: deferredCount, unit: 'tasks', period: 'now', source: sourceLabel(ctx, db, ['list']), calculation: 'Open tasks on deferred lists (Later / Project), kept out of the active workload.', quality: 'real' })
+      : missing(ctx, { id: 'tasks.deferred', label: 'Deferred', unit: 'tasks', period: 'now', source: sourceLabel(ctx, db), calculation: 'Open tasks on deferred lists.', note: ctx.source.kind === 'notion-mcp-snapshot' ? 'The snapshot covers the All active view only; deferred (Later / Project) tasks were not captured.' : 'No List property readable.' });
 
   return out;
 }

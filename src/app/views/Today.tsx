@@ -1,11 +1,11 @@
 import { areaLabel } from '../../shared/areas';
 import type { DashboardPayload, Task } from '../../shared/types';
 import type { Bucket, DashboardModel } from '../../metrics';
-import { areaCounts } from '../../metrics/tasks';
+import { areaCounts, openTasks, statusCounts } from '../../metrics/tasks';
 import type { AreaFilter } from '../App';
-import { HBars, Ring } from '../components/charts';
+import { HBars } from '../components/charts';
 import { Icon } from '../components/Icon';
-import { Card, EmptyState, ProvenanceChip, Seg, StatTile, TaskRow } from '../components/ui';
+import { Card, EmptyState, ProjectRow, Seg, StatTile, TaskRow } from '../components/ui';
 import { DOMAIN_COLOR, fmtNum, greeting } from '../format';
 
 const BUCKETS: { key: Bucket; label: string; icon: string }[] = [
@@ -46,7 +46,7 @@ function summary(model: DashboardModel): React.ReactNode {
   const wait = v('tasks.waitingOnKevin');
   if (due != null) parts.push(<span key="d"><strong>{due}</strong> due today</span>);
   if (over) parts.push(<span key="o"><strong>{over}</strong> overdue</span>);
-  if (wait) parts.push(<span key="w"><strong>{wait}</strong> waiting on you</span>);
+  if (wait) parts.push(<span key="w"><strong>{wait}</strong> {(m['tasks.waitingOnKevin']?.label ?? 'waiting').toLowerCase()}</span>);
   const done = v('tasks.doneToday');
   if (done) parts.push(<span key="x"><strong>{done}</strong> done</span>);
   return parts.length ? parts.flatMap((p, i) => (i ? [' · ', p] : [p])) : 'Nothing due today.';
@@ -121,7 +121,7 @@ function FocusNext({ model }: { model: DashboardModel }) {
       ) : (
         <div className="list">
           {model.focus.map((f, i) => (
-            <TaskRow key={f.task.id} t={f.task} today={ctx.today} tz={ctx.tz} reason={f.reason} rank={i + 1} showStatus={false} />
+            <TaskRow key={f.task.id} t={f.task} today={ctx.today} tz={ctx.tz} reason={f.reason} rank={i + 1} showStatus={false} showArea={false} />
           ))}
         </div>
       )}
@@ -157,8 +157,6 @@ export function Today({ model, payload, area, setArea }: { model: DashboardModel
   const m = model.metrics;
   const now = model.ctx.now;
   const sleep = model.health.find((h) => h.id === 'health.sleep_hours');
-  const weeklyRate = m['tasks.completionRate7d']!;
-  const goalsProgress = m['goals.progress']!;
   const checkFact = payload.facts.find((f) => f.category === 'tasks');
 
   return (
@@ -180,7 +178,11 @@ export function Today({ model, payload, area, setArea }: { model: DashboardModel
         <StatTile m={m['tasks.overdue']!} color="var(--critical)" icon="alert" className="span-3 m-half" />
         <StatTile m={m['tasks.dueToday']!} color={DOMAIN_COLOR.tasks} icon="calendar" className="span-3 m-half" />
         <StatTile m={m['tasks.waitingOnKevin']!} color="var(--warn)" icon="waiting" className="span-3 m-half" />
-        <StatTile m={m['tasks.blocked']!} color="var(--serious)" icon="block" className="span-3 m-half" />
+        {m['tasks.blocked']!.quality !== 'missing' || m['tasks.highPriority']!.quality === 'missing' ? (
+          <StatTile m={m['tasks.blocked']!} color="var(--serious)" icon="block" className="span-3 m-half" />
+        ) : (
+          <StatTile m={m['tasks.highPriority']!} color="var(--serious)" icon="flag" className="span-3 m-half" />
+        )}
       </div>
 
       <div className="grid">
@@ -199,6 +201,20 @@ export function Today({ model, payload, area, setArea }: { model: DashboardModel
               )}
             </Card>
           )}
+          <Card title="Projects" hint="active outcomes" icon="goals" right={<a className="btn ghost" href="#/goals">All →</a>}>
+            {model.projects.some((v) => v.project.statusGroup !== 'done') ? (
+              <div className="list">
+                {model.projects
+                  .filter((v) => v.project.statusGroup !== 'done')
+                  .slice(0, 5)
+                  .map(({ project, daysLeft, ratio }) => (
+                    <ProjectRow key={project.id} p={project} daysLeft={daysLeft} ratio={ratio} color={DOMAIN_COLOR.goals} />
+                  ))}
+              </div>
+            ) : (
+              <EmptyState title={model.projects.length ? 'All projects are done' : 'No projects found'} icon="goals" />
+            )}
+          </Card>
           {checkFact && !model.capabilities.status && (
             <Card title="From your Master Checklist" icon="tasks" flat>
               <EmptyState title="Context from Notion" icon="info" quote={{ text: checkFact.text, cite: checkFact.sourceTitle, href: checkFact.sourceUrl }} />
@@ -228,34 +244,14 @@ export function Today({ model, payload, area, setArea }: { model: DashboardModel
         )}
       </div>
 
-      <div className="grid">
-        <StatTile m={m['tasks.done7d']!} color={DOMAIN_COLOR.tasks} icon="check" spark className="span-4" />
-        <Card className="span-4" title="Weekly completion" right={<ProvenanceChip m={weeklyRate} />}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-            <Ring ratio={weeklyRate.ratio ?? null} color={DOMAIN_COLOR.tasks} label={`Weekly completion ${weeklyRate.value ?? 'unknown'}%`}>
-              <div style={{ fontWeight: 660, fontSize: 22 }}>{weeklyRate.value != null ? `${weeklyRate.value}%` : '—'}</div>
-            </Ring>
-            <div style={{ color: 'var(--text-2)', fontSize: 13 }}>{weeklyRate.quality === 'missing' ? weeklyRate.note : 'Completed ÷ (completed + due-but-open), last 7 days.'}</div>
-          </div>
-        </Card>
-        <Card className="span-4" title="Goals" right={<ProvenanceChip m={goalsProgress} />}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-            <Ring ratio={goalsProgress.ratio ?? null} color={DOMAIN_COLOR.goals} label={`Goal progress ${goalsProgress.value ?? 'unknown'}%`}>
-              <div style={{ fontWeight: 660, fontSize: 22 }}>{goalsProgress.value != null ? `${goalsProgress.value}%` : '—'}</div>
-            </Ring>
-            <div style={{ color: 'var(--text-2)', fontSize: 13, minWidth: 0 }}>
-              {model.goals.length ? (
-                model.goals.slice(0, 2).map((g) => (
-                  <div key={g.goal.id} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {g.goal.title}
-                    {g.daysLeft != null && <span className="tag"> · {g.daysLeft}d left</span>}
-                  </div>
-                ))
-              ) : (
-                <>{goalsProgress.note}</>
-              )}
-            </div>
-          </div>
+      <div className="grid top">
+        <StatTile m={m['tasks.done7d']!.quality !== 'missing' ? m['tasks.done7d']! : m['tasks.doneNow']!} color={DOMAIN_COLOR.tasks} icon="check" spark className="span-4" />
+        <Card className="span-8" title="Active by status" icon="tasks" right={<a className="btn ghost" href="#/tasks">Tasks →</a>}>
+          {model.capabilities.status ? (
+            <HBars rows={statusCounts(openTasks(model.ctx)).map((r) => ({ label: r.label, value: r.count }))} color={DOMAIN_COLOR.tasks} label="Active tasks by status" />
+          ) : (
+            <EmptyState title="Needs task status" icon="tasks" />
+          )}
         </Card>
       </div>
     </>

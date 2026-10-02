@@ -42,6 +42,7 @@ const TASK_TITLES: [string, string][] = [
 export function demoPayload(now: Date, tz: string): DashboardPayload {
   const r = rng(7);
   const today = dayKey(now, tz);
+  const at = now.toISOString();
   const iso = (day: string, hour = 9) => `${day}T${String(hour).padStart(2, '0')}:00:00.000Z`;
   const statuses = ['Not started', 'In progress', 'Waiting on Kevin', 'Blocked', 'Done'];
 
@@ -67,6 +68,10 @@ export function demoPayload(now: Date, tz: string): DashboardPayload {
       priority: ['High', 'Medium', 'Low'][Math.floor(r() * 3)]!,
       priorityRank: 2 + Math.floor(r() * 3),
       owner: r() < 0.5 ? 'Kevin' : 'Agent',
+      list: r() < 0.6 ? 'Kevin' : 'Agent help',
+      deferred: false,
+      top3: !done && i < 3 ? i + 1 : null,
+      nextAction: r() < 0.7 ? 'Demo next step' : null,
       waitingOnKevin: status.startsWith('Waiting'),
       blocked: status === 'Blocked',
       timeBucket: null,
@@ -131,7 +136,7 @@ export function demoPayload(now: Date, tz: string): DashboardPayload {
 
   const goals: Goal[] = [
     { title: 'Body weight to 195 lb', start: 208, current: 201.4, target: 195, unit: 'lb', due: addDays(today, 70) },
-    { title: 'ServSafe certification', start: 0, current: 3, target: 5, unit: 'modules', due: addDays(today, 21) },
+    { title: 'Food-safety certification', start: 0, current: 3, target: 5, unit: 'modules', due: addDays(today, 21) },
     { title: '4 workouts / week for 12 weeks', start: 0, current: 7, target: 12, unit: 'weeks', due: addDays(today, 35) },
     { title: 'Close hotel license items', start: 0, current: 6, target: 9, unit: 'items', due: addDays(today, 14) },
   ].map((g, i) => ({
@@ -155,15 +160,27 @@ export function demoPayload(now: Date, tz: string): DashboardPayload {
     prov,
   }));
 
-  const at = now.toISOString();
   return {
     schemaVersion: 1,
     generatedAt: at,
     timezone: tz,
     source: { kind: 'demo', label: 'Demo data (synthetic)', capturedAt: at, coverage: 'full', notes: ['Generated on this device for previewing visualizations. Not Kevin’s data.'] },
     sync: { ok: true, stages: [], warnings: [] },
-    entities: { tasks, projects: [], goals, dailyLogs, workouts, nutrition, health, automations: [], documents: [] },
-    taskFields: { status: 'notion', due: 'notion', priority: 'notion', owner: 'notion', waitingOnKevin: 'notion', blocked: 'notion', timeBucket: 'derived', completedAt: 'notion', area: 'notion', hierarchy: 'unavailable' },
+    entities: {
+      tasks,
+      projects: [
+        { id: 'demo-p1', title: 'Front-desk time clock', url: null, status: 'In Progress', statusGroup: 'in_progress', area: 'hotel', outcome: 'Reliable clock-in with verified payroll export.', targetDate: addDays(today, 18), linkedTasks: { total: 6, done: 4 }, parentTitle: null, lastEditedAt: at, prov },
+        { id: 'demo-p2', title: 'Weekly training routine', url: null, status: 'Needs Review', statusGroup: 'todo', area: 'health', outcome: 'A repeatable 4-day strength and conditioning plan.', targetDate: null, linkedTasks: null, parentTitle: null, lastEditedAt: at, prov },
+      ],
+      goals,
+      dailyLogs,
+      workouts,
+      nutrition,
+      health,
+      automations: [],
+      documents: [],
+    },
+    taskFields: { status: 'notion', due: 'notion', priority: 'notion', owner: 'notion', list: 'notion', top3: 'notion', nextAction: 'notion', waitingOnKevin: 'notion', blocked: 'notion', timeBucket: 'derived', completedAt: 'notion', area: 'notion', hierarchy: 'unavailable' },
     sourceMap: [],
     schema: [],
     facts: [],

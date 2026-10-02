@@ -6,7 +6,7 @@ import type { DashboardPayload, MetricValue } from '../shared/types';
 import { attention, type AttentionItem } from './attention';
 import { makeContext, type MetricContext } from './context';
 import { exerciseTrends, fitnessMetrics, personalRecords, workoutHeatmap, type PersonalRecord } from './fitness';
-import { goalMetrics, personalGoals, type GoalView } from './goals';
+import { goalMetrics, personalGoals, projectList, projectMetrics, type GoalView, type ProjectView } from './goals';
 import { habitHeatmap, habitList, habitMetrics, type HeatCell } from './habits';
 import { healthMetrics } from './health';
 import { nutritionMetrics } from './nutrition';
@@ -27,6 +27,7 @@ export interface DashboardModel {
   prs: PersonalRecord[];
   exerciseTrends: ReturnType<typeof exerciseTrends>;
   goals: GoalView[];
+  projects: ProjectView[];
   attention: AttentionItem[];
   capabilities: { status: boolean; due: boolean };
 }
@@ -39,6 +40,7 @@ export function computeDashboard(payload: DashboardPayload, now: Date, tz: strin
     ...fitnessMetrics(ctx),
     ...nutritionMetrics(ctx),
     ...goalMetrics(ctx),
+    ...projectMetrics(ctx),
   };
   const capabilities = { status: hasStatus(ctx), due: hasDue(ctx) };
   return {
@@ -55,9 +57,10 @@ export function computeDashboard(payload: DashboardPayload, now: Date, tz: strin
     prs: personalRecords(ctx),
     exerciseTrends: exerciseTrends(ctx),
     goals: personalGoals(ctx),
+    projects: projectList(ctx),
     attention: attention(ctx, metrics, payload.facts),
     capabilities,
   };
 }
 
-export type { AttentionItem, Bucket, FocusItem, GoalView, HeatCell, PersonalRecord };
+export type { AttentionItem, Bucket, FocusItem, GoalView, HeatCell, PersonalRecord, ProjectView };

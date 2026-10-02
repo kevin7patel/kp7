@@ -1,7 +1,7 @@
 import { addDays, daysBetween, dayKey } from '../../shared/dates';
 import type { DashboardModel } from '../../metrics';
 import { Meter, Ring } from '../components/charts';
-import { Card, EmptyState, StatTile } from '../components/ui';
+import { Card, EmptyState, ProjectRow, StatTile } from '../components/ui';
 import { DOMAIN_COLOR, fmtDay, fmtNum } from '../format';
 
 function Timeline({ model }: { model: DashboardModel }) {
@@ -33,7 +33,57 @@ function Timeline({ model }: { model: DashboardModel }) {
           );
         })}
       </div>
+      <div className="list timeline-list">
+        {dated.map((g) => {
+          const d = dayKey(g.goal.due!, tz);
+          const left = daysBetween(today, d);
+          return (
+            <div className="row" key={g.goal.id}>
+              <span className="title">{g.goal.title}</span>
+              <span className="pill num">
+                {fmtDay(d)} · {left >= 0 ? `${left}d` : `${-left}d past`}
+              </span>
+            </div>
+          );
+        })}
+      </div>
     </Card>
+  );
+}
+
+function Projects({ model }: { model: DashboardModel }) {
+  const active = model.projects.filter((v) => v.project.statusGroup !== 'done');
+  const done = model.projects.filter((v) => v.project.statusGroup === 'done');
+  const db = model.ctx.e.projects[0]?.prov.database ?? 'Projects';
+  return (
+    <div className="grid">
+      <Card className="span-12" title="Projects" hint={model.ctx.demo ? 'demo projects' : `${db} · your real outcomes for now`} icon="goals" color={DOMAIN_COLOR.goals}>
+        {model.projects.length ? (
+          <div className="list">
+            {active.map(({ project, daysLeft, ratio }) => (
+              <ProjectRow key={project.id} p={project} daysLeft={daysLeft} ratio={ratio} color={DOMAIN_COLOR.goals} />
+            ))}
+            {done.length > 0 && (
+              <details className="done-group">
+                <summary>
+                  {done.length} done project{done.length === 1 ? '' : 's'}
+                </summary>
+                {done.map(({ project, daysLeft, ratio }) => (
+                  <ProjectRow key={project.id} p={project} daysLeft={daysLeft} ratio={ratio} color={DOMAIN_COLOR.goals} />
+                ))}
+              </details>
+            )}
+          </div>
+        ) : (
+          <EmptyState title="No projects found" icon="goals">
+            The Projects database returned no rows. Projects appear here with status, area, outcome and target date as soon as they exist in Notion.
+          </EmptyState>
+        )}
+        {model.projects.length > 0 && !model.projects.some((v) => v.project.linkedTasks) && (
+          <p className="foot-note">Linked-task progress appears once tasks carry a Project relation; no completion percentage is guessed until then.</p>
+        )}
+      </Card>
+    </div>
   );
 }
 
@@ -45,19 +95,25 @@ export function Goals({ model }: { model: DashboardModel }) {
       <div className="hero page">
         <div>
           <h2>Goals</h2>
-          <p>Measurable distance to target, with due-date countdowns.</p>
+          <p>Projects and measurable goals, with target-date countdowns.</p>
         </div>
       </div>
       <div className="grid">
-        <StatTile m={m['goals.active']!} color={DOMAIN_COLOR.goals} icon="goals" className="span-6 m-half" />
-        <StatTile m={m['goals.progress']!} color={DOMAIN_COLOR.goals} icon="progress" className="span-6 m-half" />
+        <StatTile m={m['projects.active']!} color={DOMAIN_COLOR.goals} icon="goals" className="span-3 m-half" />
+        <StatTile m={m['projects.dated']!} color={DOMAIN_COLOR.goals} icon="calendar" className="span-3 m-half" />
+        <StatTile m={m['goals.active']!} color={DOMAIN_COLOR.goals} icon="goals" className="span-3 m-half" />
+        <StatTile m={m['goals.progress']!} color={DOMAIN_COLOR.goals} icon="progress" className="span-3 m-half" />
       </div>
+
+      <Projects model={model} />
 
       {model.goals.length === 0 ? (
         <div className="grid">
-          <Card className="span-12" title="Personal goals" color={DOMAIN_COLOR.goals}>
-            <EmptyState title="No personal goals in Notion yet" icon="goals">
-              Your Goals Tracker currently holds only Notion template sample rows, so nothing is shown as your goal. Add rows with a title, Start value, End value (target), a current value or Progress, and a Due date — progress rings and the timeline fill in automatically.
+          <Card className="span-12" title="Measurable goals" color={DOMAIN_COLOR.goals}>
+            <EmptyState title={templates.length ? 'Goals Tracker excluded for now' : 'No measurable goals in Notion yet'} icon="goals">
+              {templates.length
+                ? 'The Goals Tracker rows are not yet confirmed as your goals, so none are shown as yours. Confirm or replace them (title, Start value, target, current value or Progress, Due date) and progress rings plus the timeline fill in automatically.'
+                : 'Add rows to a goals database with a title, Start value, target, a current value or Progress, and a Due date — progress rings and the timeline fill in automatically.'}
             </EmptyState>
           </Card>
         </div>
@@ -127,7 +183,7 @@ export function Goals({ model }: { model: DashboardModel }) {
                       <small>{g.templateReason}</small>
                     </span>
                   )}
-                  <span className="pill">Template sample</span>
+                  <span className="pill">Excluded</span>
                 </div>
               ))}
             </div>

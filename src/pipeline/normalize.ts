@@ -26,6 +26,8 @@ import type { NotionValue, RawBundle, RawDataSource, RawRow } from './sources/ty
 
 export interface NormalizeResult {
   entities: Entities;
+  /** Rows intentionally dropped per entity (e.g. Source = Test), so VERIFY can account for them. */
+  excluded: Record<string, number>;
   taskFields: Record<string, FieldSource>;
   schema: SchemaReport[];
   warnings: string[];
@@ -61,9 +63,19 @@ function titleOf(row: RawRow, resolved: Record<string, string | null>): string {
 }
 
 function areaFor(row: RawRow, resolved: Record<string, string | null>, title: string): { area: string; source: FieldSource } {
-  const value = readNames(prop(row, resolved.area))[0];
-  if (value) return { area: areaFromNotion(value), source: 'notion' };
+  if (resolved.area) {
+    const value = readNames(prop(row, resolved.area))[0];
+    // The database has an Area field: an empty value is unclassified, not a guess.
+    return value ? { area: areaFromNotion(value), source: 'notion' } : { area: 'unclassified', source: 'unavailable' };
+  }
   return { area: classifyArea(title, row.parentTitle), source: 'derived' };
+}
+
+/** Priority rank from the select's own option order (first option = 1), else keyword rules. */
+function priorityRanker(ds: RawDataSource, resolved: Record<string, string | null>): (p: string | null) => number | null {
+  const options = resolved.priority ? (ds.schema[resolved.priority]?.select?.options ?? ds.schema[resolved.priority]?.status?.options) : undefined;
+  if (options?.length) return (p) => (p ? options.findIndex((o) => o.name === p) + 1 || priorityRankFor(p) : null);
+  return priorityRankFor;
 }
 
 function rowDate(row: RawRow, resolved: Record<string, string | null>, tz: string): string | null {
@@ -78,6 +90,12 @@ function rowDate(row: RawRow, resolved: Record<string, string | null>, tz: strin
 function normalizeTasks(ds: RawDataSource, resolved: Record<string, string | null>): Task[] {
   const statusSchema = resolved.status ? ds.schema[resolved.status] : undefined;
   const titleById = new Map(ds.rows.map((r) => [r.id.replace(/-/g, ''), titleOf(r, resolved)]));
+  const rank = priorityRanker(ds, resolved);
+  const deferredLists = new Set(notionConfig.taskScope.deferredLists.map((l) => l.toLowerCase()));
+  // "Waiting on Kevin" is only knowable from an explicit signal: a checkbox, or status options that name Kevin/decisions.
+  const statusOptions = [...(statusSchema?.status?.options ?? []), ...(statusSchema?.select?.options ?? [])].map((o) => o.name);
+  const explicitWaiting = resolved.waitingOnKevin != null || statusOptions.some((o) => notionConfig.waitingOnKevin.test(o));
+  const blockedKnowable = resolved.blocked != null || statusOptions.some((o) => notionConfig.statusRules.blocked.test(o));
 
   return ds.rows.map((row) => {
     const title = titleOf(row, resolved);
@@ -89,35 +107,25 @@ function normalizeTasks(ds: RawDataSource, resolved: Record<string, string | nul
 
     const owner = readText(prop(row, resolved.owner));
     const waitingBox = readBool(prop(row, resolved.waitingOnKevin));
-    const statusKnown = resolved.status != null || resolved.done != null;
     let waitingOnKevin: boolean | null = null;
     if (waitingBox !== null) waitingOnKevin = waitingBox && group !== 'done';
-    else if (status && notionConfig.waitingOnKevin.test(status)) waitingOnKevin = group !== 'done';
-    else if (group === 'waiting' && owner && /kevin/i.test(owner)) waitingOnKevin = true;
-    else if (statusKnown) waitingOnKevin = false;
+    else if (explicitWaiting) waitingOnKevin = !!status && notionConfig.waitingOnKevin.test(status) && group !== 'done';
 
     const blockedBox = readBool(prop(row, resolved.blocked));
-    const blocked = blockedBox !== null ? blockedBox && group !== 'done' : statusKnown ? group === 'blocked' : null;
+    const blocked = blockedBox !== null ? blockedBox && group !== 'done' : blockedKnowable ? group === 'blocked' : null;
 
     const due = readDate(prop(row, resolved.due));
+    // Only an explicit completion date is a completion event. Last-edited time is never used.
     const completed = readDate(prop(row, resolved.completedAt));
-    let completedAt: string | null = null;
-    let completedAtSource: FieldSource = 'unavailable';
-    if (completed) {
-      completedAt = completed.start;
-      completedAtSource = 'notion';
-    } else if (group === 'done' && row.lastEditedAt) {
-      completedAt = row.lastEditedAt;
-      completedAtSource = 'derived';
-    } else if (statusKnown) {
-      completedAtSource = 'derived';
-    }
 
     const parentIds = readRelationIds(prop(row, resolved.parent));
     const parentId = parentIds[0] ?? null;
     const parentTitle = row.parentTitle ?? (parentId ? (titleById.get(parentId.replace(/-/g, '')) ?? null) : null);
     const priority = readText(prop(row, resolved.priority));
     const { area, source: areaSource } = areaFor({ ...row, parentTitle }, resolved, title);
+    const list = readText(prop(row, resolved.list));
+    const top3Raw = readText(prop(row, resolved.top3));
+    const top3 = top3Raw && /^\d+$/.test(top3Raw.trim()) ? Number(top3Raw.trim()) : null;
 
     return {
       id: row.id,
@@ -128,8 +136,12 @@ function normalizeTasks(ds: RawDataSource, resolved: Record<string, string | nul
       due: due?.start ?? null,
       dueHasTime: due?.hasTime ?? false,
       priority,
-      priorityRank: priorityRankFor(priority),
+      priorityRank: rank(priority),
       owner,
+      list,
+      deferred: !!list && deferredLists.has(list.toLowerCase()),
+      top3,
+      nextAction: readText(prop(row, resolved.nextAction)),
       waitingOnKevin,
       blocked,
       timeBucket: readText(prop(row, resolved.timeBucket)),
@@ -138,13 +150,21 @@ function normalizeTasks(ds: RawDataSource, resolved: Record<string, string | nul
       parentId,
       parentTitle,
       projectIds: readRelationIds(prop(row, resolved.project)),
-      completedAt,
-      completedAtSource,
+      completedAt: completed?.start ?? null,
+      completedAtSource: completed ? 'notion' : 'unavailable',
       createdAt: row.createdAt,
       lastEditedAt: row.lastEditedAt,
       prov: { source: 'none', database: ds.title, url: row.url ?? undefined },
     } satisfies Task;
   });
+}
+
+/** Drop rows whose Source marks them as test data (e.g. Source = Test). */
+function excludeTestRows(ds: RawDataSource, resolved: Record<string, string | null>): { ds: RawDataSource; excluded: number } {
+  if (!resolved.source) return { ds, excluded: 0 };
+  const bad = new Set(notionConfig.taskScope.excludeSourceValues.map((v) => v.toLowerCase()));
+  const rows = ds.rows.filter((r) => !bad.has((readText(prop(r, resolved.source)) ?? '').toLowerCase()));
+  return { ds: { ...ds, rows }, excluded: ds.rows.length - rows.length };
 }
 
 function normalizeProjects(ds: RawDataSource, resolved: Record<string, string | null>): Project[] {
@@ -159,6 +179,9 @@ function normalizeProjects(ds: RawDataSource, resolved: Record<string, string | 
       status,
       statusGroup: statusGroupFor(status, statusGroupName(statusSchema, status)),
       area: areaFor(row, resolved, title).area,
+      outcome: readText(prop(row, resolved.outcome)),
+      targetDate: readDate(prop(row, resolved.targetDate))?.start ?? null,
+      linkedTasks: null,
       parentTitle: row.parentTitle,
       lastEditedAt: row.lastEditedAt,
       prov: { source: 'none', database: ds.title, url: row.url ?? undefined },
@@ -187,6 +210,7 @@ function normalizeGoals(ds: RawDataSource, resolved: Record<string, string | nul
     let templateReason: string | null = null;
     if (samples.has(title.toLowerCase())) templateReason = 'Matches a Notion template sample title';
     else if (title === 'Untitled') templateReason = 'Empty, untitled row';
+    else if (!notionConfig.goalsTrackerConfirmed) templateReason = 'Goals Tracker not yet confirmed as personal goals (excluded in V1)';
 
     return {
       id: row.id,
@@ -337,6 +361,7 @@ export function normalize(bundle: RawBundle, tz: string = dashboardConfig.timezo
   };
   const schema: SchemaReport[] = [];
   const warnings: string[] = [];
+  const excludedRows: Record<string, number> = {};
   let taskResolved: Record<string, string | null> | null = null;
 
   for (const ds of bundle.dataSources) {
@@ -353,10 +378,14 @@ export function normalize(bundle: RawBundle, tz: string = dashboardConfig.timezo
     });
 
     switch (ds.entity) {
-      case 'task':
+      case 'task': {
         taskResolved ??= resolved;
-        entities.tasks.push(...normalizeTasks(ds, resolved));
+        const { ds: kept, excluded } = excludeTestRows(ds, resolved);
+        excludedRows.task = (excludedRows.task ?? 0) + excluded;
+        if (excluded) warnings.push(`${ds.title}: ${excluded} test row${excluded === 1 ? '' : 's'} excluded (Source = Test).`);
+        entities.tasks.push(...normalizeTasks(kept, resolved));
         break;
+      }
       case 'project':
         entities.projects.push(...normalizeProjects(ds, resolved));
         break;
@@ -383,6 +412,14 @@ export function normalize(bundle: RawBundle, tz: string = dashboardConfig.timezo
     }
   }
 
+  // Linked-task completion per project — only when tasks actually carry Project relations.
+  if (entities.tasks.some((t) => t.projectIds.length)) {
+    for (const p of entities.projects) {
+      const linked = entities.tasks.filter((t) => t.projectIds.some((id) => id.replace(/-/g, '') === p.id.replace(/-/g, '')));
+      p.linkedTasks = linked.length ? { total: linked.length, done: linked.filter((t) => t.statusGroup === 'done').length } : null;
+    }
+  }
+
   // Stamp provenance with the actual source kind.
   for (const list of Object.values(entities) as { prov?: { source: string } }[][]) {
     for (const item of list) if (item.prov) item.prov.source = bundle.source.kind;
@@ -390,15 +427,19 @@ export function normalize(bundle: RawBundle, tz: string = dashboardConfig.timezo
 
   const r = taskResolved ?? {};
   const statusKnown = r.status != null || r.done != null;
+  const explicitWaiting = entities.tasks.some((t) => t.waitingOnKevin !== null);
   const taskFields: Record<string, FieldSource> = {
     status: statusKnown ? 'notion' : 'unavailable',
     due: r.due ? 'notion' : 'unavailable',
     priority: r.priority ? 'notion' : 'unavailable',
     owner: r.owner ? 'notion' : 'unavailable',
-    waitingOnKevin: r.waitingOnKevin ? 'notion' : statusKnown ? 'derived' : 'unavailable',
-    blocked: r.blocked ? 'notion' : statusKnown ? 'derived' : 'unavailable',
+    list: r.list ? 'notion' : 'unavailable',
+    top3: r.top3 ? 'notion' : 'unavailable',
+    nextAction: r.nextAction ? 'notion' : 'unavailable',
+    waitingOnKevin: explicitWaiting ? 'notion' : 'unavailable',
+    blocked: r.blocked ? 'notion' : entities.tasks.some((t) => t.blocked !== null) ? 'derived' : 'unavailable',
     timeBucket: r.timeBucket ? 'notion' : r.due ? 'derived' : 'unavailable',
-    completedAt: r.completedAt ? 'notion' : statusKnown ? 'derived' : 'unavailable',
+    completedAt: r.completedAt ? 'notion' : 'unavailable',
     area: r.area ? 'notion' : 'derived',
     hierarchy: r.parent || entities.tasks.some((t) => t.parentTitle) ? 'notion' : 'unavailable',
   };
@@ -407,5 +448,5 @@ export function normalize(bundle: RawBundle, tz: string = dashboardConfig.timezo
   if (taskResolved && !statusKnown && !metadataOnly) warnings.push('Tasks: no Status/Done property readable — open/done metrics unavailable.');
   if (taskResolved && !r.due && !metadataOnly) warnings.push('Tasks: no due-date property readable — Today/Overdue unavailable.');
 
-  return { entities, taskFields, schema, warnings };
+  return { entities, excluded: excludedRows, taskFields, schema, warnings };
 }

@@ -184,7 +184,7 @@ export function Settings({ theme, dash }: { theme: ReturnType<typeof useTheme>; 
               </li>
               <li>Enable GitHub Pages (Settings → Pages → Deploy from branch → gh-pages).</li>
             </ol>
-            <a className="btn" style={{ marginTop: 12 }} href={`${REPO_URL}/blob/main/docs/SETUP.md`} target="_blank" rel="noreferrer">
+            <a className="btn" style={{ marginTop: 12 }} href={`${REPO_URL}/blob/main/docs/setup.md`} target="_blank" rel="noreferrer">
               Full setup guide <Icon name="external" size={14} />
             </a>
           </Card>

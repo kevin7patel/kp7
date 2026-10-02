@@ -7,7 +7,7 @@ import type { DashboardPayload, VerificationCheck } from '../shared/types';
 import { computeDashboard } from '../metrics';
 import type { RawBundle } from './sources/types';
 
-export function verify(payload: DashboardPayload, raw: RawBundle, now: Date): { ok: boolean; checks: VerificationCheck[] } {
+export function verify(payload: DashboardPayload, raw: RawBundle, now: Date, excluded: Record<string, number> = {}): { ok: boolean; checks: VerificationCheck[] } {
   const checks: VerificationCheck[] = [];
   const add = (name: string, ok: boolean, detail: string) => checks.push({ name, ok, detail });
   const e = payload.entities;
@@ -20,7 +20,8 @@ export function verify(payload: DashboardPayload, raw: RawBundle, now: Date): { 
     ['automation', e.automations],
   ] as const) {
     const rawCount = raw.dataSources.filter((d) => d.entity === entity).reduce((a, d) => a + d.rows.length, 0);
-    add(`${entity} rows preserved`, rawCount === list.length, `${list.length} normalized / ${rawCount} source rows`);
+    const dropped = excluded[entity] ?? 0;
+    add(`${entity} rows preserved`, rawCount - dropped === list.length, `${list.length} normalized / ${rawCount} source rows${dropped ? ` (${dropped} excluded as test data)` : ''}`);
   }
 
   // 2. IDs unique.

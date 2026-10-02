@@ -16,6 +16,11 @@ export function fmtDay(key: string): string {
   return new Date(`${key}T12:00:00Z`).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' });
 }
 
+/** "Oct 14" for a date or datetime string (calendar day as written in Notion). */
+export function shortDay(value: string): string {
+  return new Date(`${value.slice(0, 10)}T12:00:00Z`).toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' });
+}
+
 export function dueLabel(t: Task, today: string, tz: string): string | null {
   if (!t.due) return null;
   const day = dayKey(t.due, tz);

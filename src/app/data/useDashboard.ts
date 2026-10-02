@@ -27,12 +27,14 @@ export interface DashState {
 
 const DATA_BASE = 'data/';
 
-async function fetchJson<T>(path: string): Promise<{ ok: true; data: T } | { ok: false; status: number }> {
+async function fetchJson<T>(path: string): Promise<{ ok: true; data: T; fromCache: boolean } | { ok: false; status: number }> {
   const res = await fetch(`${DATA_BASE}${path}?t=${Date.now()}`, { cache: 'no-store' });
   if (!res.ok) return { ok: false, status: res.status };
   const type = res.headers.get('content-type') ?? '';
   if (!type.includes('json')) return { ok: false, status: 415 };
-  return { ok: true, data: (await res.json()) as T };
+  // The service worker sets this header when it answers from cache because the network failed.
+  const fromCache = res.headers.get('x-kp7-from-cache') === '1' || (typeof navigator !== 'undefined' && navigator.onLine === false);
+  return { ok: true, data: (await res.json()) as T, fromCache };
 }
 
 export function useDashboard() {
@@ -53,7 +55,7 @@ export function useDashboard() {
         const plain = await fetchJson<DashboardPayload>('dashboard.json');
         if (plain.ok) {
           fetchedAtRef.current = Date.now();
-          setState((s) => ({ ...s, status: 'ready', payload: plain.data, mode: 'plain', fetchedAt: Date.now(), offline: false }));
+          setState((s) => ({ ...s, status: 'ready', payload: plain.data, mode: 'plain', fetchedAt: Date.now(), offline: plain.fromCache }));
           return;
         }
         // 2) Public static hosting: encrypted payload.
@@ -69,7 +71,7 @@ export function useDashboard() {
         }
         const payload = await decryptJson<DashboardPayload>(enc.data, key);
         fetchedAtRef.current = Date.now();
-        setState((s) => ({ ...s, status: 'ready', payload, mode: 'encrypted', fetchedAt: Date.now(), offline: false }));
+        setState((s) => ({ ...s, status: 'ready', payload, mode: 'encrypted', fetchedAt: Date.now(), offline: enc.fromCache }));
         latestRun(store.get(KEYS.ghToken))
           .then((lastRun) => setState((s) => ({ ...s, lastRun })))
           .catch(() => undefined);
@@ -186,7 +188,7 @@ export function syncView(s: DashState, now: Date): SyncView {
 
   if (failed) return { kind: 'error', label: 'Sync failing', lastSynced: last, detail: 'The latest scheduled Notion sync failed; showing the last good data.' };
   if (s.offline) return { kind: 'offline', label: 'Offline', lastSynced: last, detail: 'Could not reach the server; showing cached data.' };
-  if (p.source.kind === 'notion-mcp-snapshot') return { kind: age > dashboardConfig.freshness.staleAfterMinutes ? 'stale' : 'snapshot', label: 'Snapshot', lastSynced: last, detail: 'Metadata snapshot captured by Claude. Live sync starts once the Notion token is configured.' };
+  if (p.source.kind === 'notion-mcp-snapshot') return { kind: age > dashboardConfig.freshness.staleAfterMinutes ? 'stale' : 'snapshot', label: 'Snapshot', lastSynced: last, detail: p.source.coverage === 'metadata-only' ? 'Titles-only snapshot captured by Claude. Live sync starts once the Notion token is configured.' : 'Point-in-time Notion values captured by Claude, not a live sync. Live sync starts once the Notion token is configured.' };
   if (age > dashboardConfig.freshness.staleAfterMinutes) return { kind: 'stale', label: 'Stale', lastSynced: last, detail: `No successful sync in ${Math.round(age / 60)}h (expected every 30 min).` };
   return { kind: 'live', label: 'Synced', lastSynced: last, detail: 'Synced from Notion.' };
 }
