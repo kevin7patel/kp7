@@ -50,7 +50,8 @@ describe('life-system source integrity', () => {
     const payload = demoPayload(NOW, 'America/Chicago');
     payload.entities.workouts = [{ id: 'unknown', date: '2026-10-02', title: 'Completion unknown', type: null, durationMin: 30, completed: null, exercises: [], url: null, prov: { source: 'demo' } }];
     const model = computeDashboard(payload, NOW, 'America/Chicago');
-    expect(model.metrics['fitness.workouts7d']!.value).toBe(0);
+    expect(model.metrics['fitness.workouts7d']!.value).toBeNull();
+    expect(model.metrics['fitness.workouts7d']!.note).toMatch(/completion is not recorded/);
     expect(model.metrics['fitness.minutes7d']!.value).toBeNull();
     expect(model.prs).toHaveLength(0);
   });

@@ -265,6 +265,7 @@ function normalizeWorkouts(ds: RawDataSource, resolved: Record<string, string | 
     const sets = readNumber(prop(row, resolved.sets));
     const reps = readNumber(prop(row, resolved.reps));
     const weight = readNumber(prop(row, resolved.weight));
+    const status = readText(prop(row, resolved.status));
     const hasExercise = exercise != null || sets != null || reps != null || weight != null;
     out.push({
       id: row.id,
@@ -272,7 +273,7 @@ function normalizeWorkouts(ds: RawDataSource, resolved: Record<string, string | 
       title: titleOf(row, resolved),
       type: readText(prop(row, resolved.type)),
       durationMin: readNumber(prop(row, resolved.duration)),
-      completed: readBool(prop(row, resolved.completed)) ?? (resolved.status ? notionConfig.statusRules.done.test(readText(prop(row, resolved.status)) ?? '') : null),
+      completed: readBool(prop(row, resolved.completed)) ?? (status ? notionConfig.statusRules.done.test(status) : null),
       exercises: hasExercise
         ? [{ exercise: exercise ?? titleOf(row, resolved), sets, reps, weight, unit: resolved.weight && /kg/i.test(resolved.weight) ? 'kg' : 'lb' }]
         : [],

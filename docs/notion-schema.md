@@ -12,7 +12,7 @@ is on the dashboard's **Sources** screen.
 | Tasks | data source `ed47cf5c-9013-48bd-8c76-d3fd8806caff` | Primary structured tasks | yes |
 | Projects | data source `a862fc2e-e045-45a0-972b-6592df011baa` | Real longer-term outcomes | yes |
 | Goals Tracker | data source `32d38b58-7685-8064-90bb-000b08e4d5ae` | Example/template rows — excluded in V1 | no |
-| Build a Better Me | page `3ed38b58-7685-817c-bbb1-d66caef90823` | Fitness plan; status line shown, no observations yet | no |
+| Build a Better Me | page `3ed38b58-7685-817c-bbb1-d66caef90823` | Fitness plan and program status line | no |
 | Meal Log | data source `d54e44a6-8fbf-4829-9959-0a4c1f2e33a4` | Recorded food and estimates | no |
 | Training & Progress | data source `55cedb1b-58f8-49c3-a2ce-7bea7e4f161e` | Mixed tracker; dated Workout rows only | no |
 | Command Center, Master Checklist | pages `3eb38b58…b219`, `3ec38b58…624e` | Context and links | no |

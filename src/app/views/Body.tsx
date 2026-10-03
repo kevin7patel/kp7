@@ -168,8 +168,8 @@ function Health({ model, facts }: { model: DashboardModel; facts: Fact[] }) {
     return (
       <div className="grid">
         <Card className="span-12" title="Health metrics" color={DOMAIN_COLOR.health}>
-          <EmptyState title="No body or recovery data in Notion yet" icon="health" quote={factQuote(facts, 'health') ?? factQuote(facts, 'fitness')}>
-            Weight, body composition, sleep, steps, resting HR, HRV, recovery and energy each get a card with a 30-day trend once any of them are recorded in a Notion health/body database. The dashboard shows values and changes only — no scores and no medical interpretation.
+          <EmptyState title="No chartable body or recovery values yet" icon="health" quote={factQuote(facts, 'health') ?? factQuote(facts, 'fitness')}>
+            Health notes can remain in Notion. Charts need a dated numeric property for weight, body composition, sleep, steps, resting HR, HRV, recovery or energy. The dashboard shows recorded values and changes only — no scores and no medical interpretation.
           </EmptyState>
         </Card>
       </div>
