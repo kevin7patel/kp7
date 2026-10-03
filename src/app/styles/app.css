@@ -1,5 +1,19 @@
 @import './tokens.css';
 
+.setup-intro { display: flex; align-items: start; gap: 16px; flex-wrap: wrap; }
+.setup-intro p { flex: 1 1 350px; margin: 0; color: var(--text-2); }
+.setup-list { list-style: none; counter-reset: setup; padding: 0; margin: 18px 0 0; }
+.setup-list > li { counter-increment: setup; border-top: 1px solid var(--border); padding: 18px 0 0 40px; margin-top: 18px; position: relative; }
+.setup-list > li::before { content: counter(setup); position: absolute; left: 0; top: 18px; width: 28px; height: 28px; border-radius: 50%; background: var(--bg-tint); display: grid; place-items: center; font-weight: 650; }
+.setup-list h4 { font-size: 16px; margin: 2px 0 8px; }
+.setup-list p { color: var(--text-2); margin: 10px 0; max-width: 78ch; }
+.setup-list .tag { white-space: normal; }
+.setup-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.setup-key { margin-top: 14px; max-width: 560px; }
+.setup-key .input { flex: 1 1 200px; min-width: 0; }
+.setup-notice:empty { display: none; }
+.setup-notice { font-size: 13px; }
+
 *,
 *::before,
 *::after {

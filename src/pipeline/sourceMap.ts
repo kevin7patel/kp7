@@ -2,7 +2,6 @@
  * Builds the "what exists in Notion" map shown on the Sources screen:
  * each requested category → connected / partial / template / missing, with sources.
  */
-import { notionConfig } from '../../config/notion.config';
 import type { Category, Entities, Fact, FieldSource, SourceInfo, SourceMapEntry } from '../shared/types';
 import type { RawBundle } from './sources/types';
 
@@ -10,7 +9,7 @@ const nUrl = (id: string) => `https://www.notion.so/${id.replace(/-/g, '')}`;
 
 export function buildSourceMap(bundle: RawBundle, entities: Entities, taskFields: Record<string, FieldSource>, facts: Fact[]): SourceMapEntry[] {
   const src: SourceInfo = bundle.source;
-  const ds = (entity: string) => bundle.dataSources.filter((d) => d.entity === entity);
+  const ds = (entity: string) => bundle.dataSources.filter((d) => d.entity === entity || (entity === 'workout' && d.entity === 'training'));
   const asSources = (entity: string, note: string) => ds(entity).map((d) => ({ title: d.title, url: nUrl(d.databaseId), note }));
   const fact = (cat: Category) => facts.find((f) => f.category === cat);
   const meta = src.coverage === 'metadata-only';
@@ -69,8 +68,8 @@ export function buildSourceMap(bundle: RawBundle, entities: Entities, taskFields
     out.push({
       category: cat,
       status: count ? 'connected' : 'missing',
-      sources: count ? asSources(entity, `${count} records`) : f ? [{ title: f.sourceTitle, url: f.sourceUrl, note: f.text }] : [],
-      note: count ? `${count} ${label} records.` : `No ${label} database found. A database whose title matches ${String(notionConfig.classifyByTitle.find((r) => r.entity === entity)?.match)} is picked up automatically.`,
+      sources: ds(entity).length ? asSources(entity, `${count} records`) : f ? [{ title: f.sourceTitle, url: f.sourceUrl, note: f.text }] : [],
+      note: count ? `${count} ${label} records.` : ds(entity).length ? `${label} source connected; no usable records yet.` : `No ${label} database shared with the integration yet.`,
     });
   }
 

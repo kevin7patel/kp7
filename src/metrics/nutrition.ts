@@ -20,7 +20,7 @@ export function dailyTotals(entries: NutritionEntry[]): Map<string, Record<Key, 
 export function nutritionMetrics(ctx: MetricContext): Record<string, MetricValue> {
   const out: Record<string, MetricValue> = {};
   const db = ctx.e.nutrition[0]?.prov.database ?? 'Nutrition';
-  const none = 'No nutrition log found in Notion yet (Build a Better Me meal-photo workflow has no entries).';
+  const none = 'No usable meal records loaded from Notion yet. Check Meal Log sharing and sync in Settings.';
   const totals = dailyTotals(ctx.e.nutrition);
   const t = dashboardConfig.targets;
   const days14 = dayRange(addDays(ctx.today, -13), ctx.today);
@@ -50,11 +50,11 @@ export function nutritionMetrics(ctx: MetricContext): Record<string, MetricValue
       unit: d.unit,
       period: 'today',
       source: src,
-      calculation: `Sum of ${d.label.toLowerCase()} entries dated today. Trend: daily totals, 14 days. 7-day average counts only logged days.`,
+      calculation: `Subtotal of known ${d.label.toLowerCase()} values in entries dated today; missing entries and nutrients are unknown. Whole-day coverage is unconfirmed. Trend: logged subtotals, 14 days. 7-day average counts only logged days.`,
       target: d.target,
       ratio: d.target && today != null ? Math.min(1, today / d.target) : null,
       series,
-      note: avg7 != null ? `7-day avg ${round(avg7)} ${d.unit} (${last7.length} logged days)${d.target ? '' : ' · no target set'}` : undefined,
+      note: `Logged subtotal · day coverage unconfirmed${avg7 != null ? ` · 7-day avg ${round(avg7)} ${d.unit} (${last7.length} logged days)` : ''}${d.target ? '' : ' · no target set'}`,
     });
   }
 

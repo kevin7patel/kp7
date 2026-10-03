@@ -10,6 +10,8 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 concurrency:
   group: gh-pages
@@ -31,3 +33,7 @@ jobs:
       - run: bash scripts/publish-pages.sh app
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish:
+    needs: deploy
+    uses: ./.github/workflows/pages.yml

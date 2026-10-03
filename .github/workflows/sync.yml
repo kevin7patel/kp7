@@ -13,6 +13,8 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 concurrency:
   group: gh-pages
@@ -22,6 +24,8 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    outputs:
+      changed: ${{ steps.publish.outputs.changed }}
     steps:
       - name: Check configuration
         id: cfg
@@ -32,7 +36,9 @@ jobs:
           if [ -z "$NOTION_TOKEN" ] || [ -z "$DASHBOARD_KEY" ]; then
             echo "configured=false" >> "$GITHUB_OUTPUT"
             echo "### Notion sync not configured" >> "$GITHUB_STEP_SUMMARY"
-            echo "Add the NOTION_TOKEN and DASHBOARD_KEY repository secrets (see docs/setup.md). Skipping." >> "$GITHUB_STEP_SUMMARY"
+            echo "Add the NOTION_TOKEN and DASHBOARD_KEY repository secrets (see docs/setup.md). No sync ran." >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::Notion sync needs the NOTION_TOKEN and DASHBOARD_KEY repository secrets."
+            exit 1
           else
             echo "configured=true" >> "$GITHUB_OUTPUT"
           fi
@@ -61,14 +67,21 @@ jobs:
         run: npm run sync -- --source=api --publish
 
       - name: Publish encrypted payload (only if content changed)
+        id: publish
         if: steps.cfg.outputs.configured == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           changed=$(node -e "console.log(require('./.data/status.json').changed)")
+          echo "changed=$changed" >> "$GITHUB_OUTPUT"
           if [ "$changed" = "true" ]; then bash scripts/publish-pages.sh data; else echo "Notion content unchanged — nothing to publish"; fi
           {
             echo "### Notion sync"
             echo "- ok: $(node -e "console.log(require('./.data/status.json').ok)")"
             echo "- content changed: $changed"
           } >> "$GITHUB_STEP_SUMMARY"
+
+  publish:
+    needs: sync
+    if: needs.sync.outputs.changed == 'true'
+    uses: ./.github/workflows/pages.yml

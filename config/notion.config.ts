@@ -15,6 +15,7 @@ export type EntityKind =
   | 'goal'
   | 'dailyLog'
   | 'workout'
+  | 'training'
   | 'nutrition'
   | 'health'
   | 'automation'
@@ -63,6 +64,8 @@ export const notionConfig = {
       required: true,
       note: 'Real longer-term outcomes (Outcome, Status, Target date)',
     },
+    { id: '4ff20876820c468f8e1c8b5ce430028c', name: 'Meal Log', entity: 'nutrition', dataSourceId: 'd54e44a6-8fbf-4829-9959-0a4c1f2e33a4', note: 'Food Log / Build a Better Me; recorded meals, estimates and incomplete-day coverage' },
+    { id: '327983e6b19c43bebfd868335e0c6850', name: 'Training & Progress', entity: 'training', dataSourceId: '55cedb1b-58f8-49c3-a2ce-7bea7e4f161e', note: 'Mixed tracker; only Type = Workout rows feed training metrics' },
     { id: '32d38b58768580eb878ac592696f61f3', name: 'Goals Tracker', entity: 'goal', dataSourceId: '32d38b58-7685-8064-90bb-000b08e4d5ae', note: 'Unconfirmed example/template rows — excluded in V1' },
     { id: '8f041be0615e4cec82c49eccff7ab5d0', name: 'Credit Card Benefits Tracker', entity: 'ignore', note: 'Finance — mapped, not shown on the personal dashboard in v1' },
     { id: 'b5738b587685826e8419810af519df60', name: 'Travel Packing List', entity: 'ignore', note: 'Travel reference' },
@@ -75,6 +78,7 @@ export const notionConfig = {
    */
   autoDiscover: true,
   classifyByTitle: [
+    { entity: 'training', match: /^training\s*&\s*progress$/i },
     { entity: 'dailyLog', match: /daily ?log|check-?ins?|journal|habit|routine/i },
     { entity: 'workout', match: /workout|training|exercise|gym ?log|lifting|sessions?/i },
     { entity: 'nutrition', match: /nutrition|meals?|food|macros?|calorie/i },
@@ -180,8 +184,9 @@ export const notionConfig = {
     },
     workout: {
       title: { types: ['title'] },
-      date: { types: ['date', 'created_time'], names: [/date|day|when/i] },
+      date: { types: ['date', 'created_time'], names: [/^date$/i, /date|day|when/i] },
       type: { types: ['select', 'multi_select'], names: [/type|focus|split|category/i] },
+      status: { types: ['status', 'select'], names: [/^status$/i, /^progress$/i] },
       duration: { types: ['number', 'formula'], names: [/duration|minutes|mins|time/i] },
       completed: { types: ['checkbox'], names: [/done|complete/i] },
       exercise: { types: ['select', 'rich_text', 'relation'], names: [/exercise|movement|lift/i] },
@@ -191,8 +196,14 @@ export const notionConfig = {
     },
     nutrition: {
       title: { types: ['title'] },
-      date: { types: ['date', 'created_time'], names: [/date|day/i] },
-      calories: { types: ['number', 'formula', 'rollup'], names: [/calor|kcal/i] },
+      date: { types: ['date', 'created_time'], names: [/^date$/i, /date|day/i] },
+      calories: { types: ['number', 'formula', 'rollup'], names: [/^calories$/i, /^(?!.*\b(low|high)\b).*(calor|kcal)/i] },
+      caloriesLow: { types: ['number'], names: [/^calories low$/i] },
+      caloriesHigh: { types: ['number'], names: [/^calories high$/i] },
+      basis: { types: ['select', 'rich_text'], names: [/^basis$/i] },
+      confidence: { types: ['select', 'rich_text'], names: [/^confidence$/i] },
+      totalSugar: { types: ['number'], names: [/^total sugar g$/i] },
+      addedSugar: { types: ['number'], names: [/^added sugar g$/i] },
       protein: { types: ['number', 'formula', 'rollup'], names: [/protein/i] },
       carbs: { types: ['number', 'formula', 'rollup'], names: [/carb/i] },
       fat: { types: ['number', 'formula', 'rollup'], names: [/^fat|fats?\b(?!.*body)/i] },

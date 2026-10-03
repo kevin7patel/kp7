@@ -33,7 +33,7 @@ export interface NormalizeResult {
   warnings: string[];
 }
 
-const fieldSpecs = notionConfig.fields as unknown as Record<string, Record<string, FieldSpec>>;
+const fieldSpecs = { ...notionConfig.fields, training: notionConfig.fields.workout } as unknown as Record<string, Record<string, FieldSpec>>;
 
 export function statusGroupFor(status: string | null, notionGroup: string | null): StatusGroup | null {
   if (!status) return null;
@@ -265,6 +265,7 @@ function normalizeWorkouts(ds: RawDataSource, resolved: Record<string, string | 
     const sets = readNumber(prop(row, resolved.sets));
     const reps = readNumber(prop(row, resolved.reps));
     const weight = readNumber(prop(row, resolved.weight));
+    const status = readText(prop(row, resolved.status));
     const hasExercise = exercise != null || sets != null || reps != null || weight != null;
     out.push({
       id: row.id,
@@ -272,7 +273,7 @@ function normalizeWorkouts(ds: RawDataSource, resolved: Record<string, string | 
       title: titleOf(row, resolved),
       type: readText(prop(row, resolved.type)),
       durationMin: readNumber(prop(row, resolved.duration)),
-      completed: readBool(prop(row, resolved.completed)),
+      completed: readBool(prop(row, resolved.completed)) ?? (status ? notionConfig.statusRules.done.test(status) : null),
       exercises: hasExercise
         ? [{ exercise: exercise ?? titleOf(row, resolved), sets, reps, weight, unit: resolved.weight && /kg/i.test(resolved.weight) ? 'kg' : 'lb' }]
         : [],
@@ -300,6 +301,12 @@ function normalizeNutrition(ds: RawDataSource, resolved: Record<string, string |
       fat: readNumber(prop(row, resolved.fat)),
       waterMl: water,
       label: readText(prop(row, resolved.title)),
+      caloriesLow: readNumber(prop(row, resolved.caloriesLow)),
+      caloriesHigh: readNumber(prop(row, resolved.caloriesHigh)),
+      basis: readText(prop(row, resolved.basis)),
+      confidence: readText(prop(row, resolved.confidence)),
+      totalSugar: readNumber(prop(row, resolved.totalSugar)),
+      addedSugar: readNumber(prop(row, resolved.addedSugar)),
       prov: { source: 'none', database: ds.title, url: row.url ?? undefined },
     });
   }
@@ -398,6 +405,13 @@ export function normalize(bundle: RawBundle, tz: string = dashboardConfig.timezo
       case 'workout':
         entities.workouts.push(...normalizeWorkouts(ds, resolved, tz));
         break;
+      case 'training': {
+        // This tracker also contains check-ins, measurements and milestones.
+        // Their presence is not evidence that a workout happened.
+        const rows = ds.rows.filter((row) => readText(prop(row, resolved.type)) === 'Workout' && readDate(prop(row, resolved.date)) !== null);
+        entities.workouts.push(...normalizeWorkouts({ ...ds, rows }, resolved, tz));
+        break;
+      }
       case 'nutrition':
         entities.nutrition.push(...normalizeNutrition(ds, resolved, tz));
         break;

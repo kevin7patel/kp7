@@ -38,7 +38,7 @@ export function Gate({ state, dash }: { state: DashState; dash: ReturnType<typeo
             }}
             style={{ display: 'grid', gap: 10 }}
           >
-            <input className="input mono" placeholder="Dashboard key" value={key} onChange={(e) => setKey(e.target.value)} autoComplete="off" spellCheck={false} aria-label="Dashboard key" />
+            <input className="input mono" type="password" placeholder="Dashboard key" value={key} onChange={(e) => setKey(e.target.value)} autoComplete="off" spellCheck={false} aria-label="Dashboard key" />
             {err && <div style={{ color: 'var(--critical-ink)', fontSize: 13 }}>{err}</div>}
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <button className="btn primary" type="submit" disabled={!key.trim()}>

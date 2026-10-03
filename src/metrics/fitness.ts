@@ -4,7 +4,7 @@ import type { MetricValue, Workout } from '../shared/types';
 import { metric, missing, sourceLabel, type MetricContext } from './context';
 import { heatmapGrid, type HeatCell } from './habits';
 
-const counts = (w: Workout) => w.completed !== false;
+const counts = (w: Workout) => w.completed === true;
 
 export interface PersonalRecord {
   exercise: string;
@@ -23,7 +23,7 @@ function sessionsByDay(ws: Workout[]): Map<string, Workout[]> {
 
 export function workoutHeatmap(ctx: MetricContext): HeatCell[] {
   const byDay = sessionsByDay(ctx.e.workouts);
-  const hasData = ctx.e.workouts.length > 0;
+  const hasData = ctx.e.workouts.some((w) => w.completed !== null);
   return heatmapGrid(
     ctx,
     (d) => (!hasData ? null : byDay.has(d) ? Math.min(1, (byDay.get(d)!.reduce((a, w) => a + (w.durationMin ?? 45), 0) || 45) / 90) : 0),
@@ -76,7 +76,7 @@ export function fitnessMetrics(ctx: MetricContext): Record<string, MetricValue> 
   const none = 'No workout log found in Notion yet (Build a Better Me is awaiting intake).';
   const target = dashboardConfig.targets.workoutsPerWeek;
 
-  if (!ctx.e.workouts.length) {
+  if (!ctx.e.workouts.length || ctx.e.workouts.every((w) => w.completed === null)) {
     for (const [id, label, unit, period] of [
       ['fitness.workouts7d', 'Workouts · 7 days', 'sessions', 'last 7 days'],
       ['fitness.weekStreak', 'Training streak', 'weeks', 'current'],
@@ -84,7 +84,7 @@ export function fitnessMetrics(ctx: MetricContext): Record<string, MetricValue> 
       ['fitness.lastWorkout', 'Last workout', 'days ago', 'now'],
       ['fitness.today', "Today's workout", null, 'today'],
     ] as const) {
-      out[id] = missing(ctx, { id, label, unit, period, source: src, calculation: 'From workout log rows.', note: none });
+      out[id] = missing(ctx, { id, label, unit, period, source: src, calculation: 'From explicitly completed workout log rows.', note: ctx.e.workouts.length ? 'Workout completion is not recorded; unknown completion cannot be counted as zero or as a completed session.' : none });
     }
     return out;
   }
@@ -104,7 +104,7 @@ export function fitnessMetrics(ctx: MetricContext): Record<string, MetricValue> 
     unit: 'sessions',
     period: 'last 7 days',
     source: src,
-    calculation: 'Logged workout rows (not marked incomplete) in the last 7 days. Sparkline: sessions per week, 12 weeks.',
+    calculation: 'Workouts explicitly marked completed in the last 7 days. Sparkline: completed sessions per week, 12 weeks.',
     series: perWeek,
     target,
     ratio: target ? Math.min(1, last7.length / target) : null,
