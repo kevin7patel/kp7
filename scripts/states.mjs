@@ -118,6 +118,48 @@ await scenario('disconnected', {
   },
 });
 
+await scenario('guided-setup-key', {
+  hash: '#/settings',
+  act: async (page) => {
+    await page.evaluate(() => Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async (value) => { window.setupCopied = value; } } }));
+    await page.getByRole('button', { name: 'Generate dashboard key' }).click();
+    await page.getByRole('button', { name: 'Copy private unlock link' }).click();
+    await page.reload({ waitUntil: 'networkidle' });
+  },
+  expect: {
+    'key persists without regeneration': async (p) => (await p.getByRole('button', { name: 'Generate dashboard key' }).count()) === 0 && (await p.evaluate(() => localStorage.getItem('kp7.dataKey')?.length)) === 43,
+    'key is masked': async (p) => (await p.locator('#setup-dashboard-key').getAttribute('type')) === 'password',
+    'Pages source is explained': (p) => text(p, 'GitHub Actions'),
+    'original food and training links provided': async (p) => (await p.getByRole('link', { name: 'Meal Log', exact: true }).getAttribute('href')).endsWith('4ff20876820c468f8e1c8b5ce430028c') && (await p.getByRole('link', { name: 'Training & Progress', exact: true }).count()) === 1,
+    'no live-sync success claimed': (p) => text(p, 'Live connection not verified yet'),
+  },
+});
+
+await scenario('guided-setup-existing-key', {
+  hash: '#/settings',
+  encrypted: enc,
+  storage: { 'kp7.dataKey': key },
+  act: async (page) => {
+    await page.evaluate(() => Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async (value) => { window.setupCopied = value; } } }));
+    await page.getByRole('button', { name: 'Copy private unlock link' }).click();
+  },
+  expect: {
+    'existing key is not replaced': async (p) => (await p.evaluate(() => localStorage.getItem('kp7.dataKey'))) === key && (await p.getByRole('button', { name: 'Generate dashboard key' }).count()) === 0,
+    'unlock link uses the production site, not the preview origin': async (p) => (await p.evaluate(() => window.setupCopied)) === `https://kevin7patel.github.io/kp7/#k=${key}`,
+    'Notion API payload is verified': (p) => text(p, 'Live Notion data loaded'),
+  },
+});
+
+await scenario('guided-setup-clipboard-denied', {
+  hash: '#/settings',
+  storage: { 'kp7.dataKey': key },
+  act: async (page) => {
+    await page.evaluate(() => Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async () => { throw new Error('blocked'); } } }));
+    await page.getByRole('button', { name: 'Copy dashboard key' }).click();
+  },
+  expect: { 'manual copy fallback is explained': (p) => text(p, 'Clipboard access is unavailable') },
+});
+
 await scenario('offline-after-load', {
   plain: withCaptured(hoursAgo(0.1)),
   act: async (page, ctx) => {

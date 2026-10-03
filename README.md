@@ -23,8 +23,9 @@ a reason — never as a fake zero.
 
 ## Status
 Version 1. Live structured sync starts once the Notion integration token is added — see
-**[docs/setup.md](docs/setup.md)**. Until then the app runs on a point-in-time structured snapshot
-of the Tasks and Projects databases captured by Claude (kept out of git).
+**[docs/setup.md](docs/setup.md)**. Settings includes a guided setup with direct links and local key creation.
+Meal Log and Training & Progress are mapped to the existing life/health project. A local snapshot,
+when present, is labelled as a point-in-time capture; the hosted site awaits its first encrypted sync.
 
 ## Commands
 ```bash

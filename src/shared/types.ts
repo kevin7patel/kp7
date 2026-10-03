@@ -138,6 +138,12 @@ export interface NutritionEntry {
   fat: number | null;
   waterMl: number | null;
   label: string | null;
+  caloriesLow?: number | null;
+  caloriesHigh?: number | null;
+  basis?: string | null;
+  confidence?: string | null;
+  totalSugar?: number | null;
+  addedSugar?: number | null;
   prov: Provenance;
 }
 

@@ -4,7 +4,7 @@ import type { MetricValue, Workout } from '../shared/types';
 import { metric, missing, sourceLabel, type MetricContext } from './context';
 import { heatmapGrid, type HeatCell } from './habits';
 
-const counts = (w: Workout) => w.completed !== false;
+const counts = (w: Workout) => w.completed === true;
 
 export interface PersonalRecord {
   exercise: string;
@@ -104,7 +104,7 @@ export function fitnessMetrics(ctx: MetricContext): Record<string, MetricValue> 
     unit: 'sessions',
     period: 'last 7 days',
     source: src,
-    calculation: 'Logged workout rows (not marked incomplete) in the last 7 days. Sparkline: sessions per week, 12 weeks.',
+    calculation: 'Workouts explicitly marked completed in the last 7 days. Sparkline: completed sessions per week, 12 weeks.',
     series: perWeek,
     target,
     ratio: target ? Math.min(1, last7.length / target) : null,

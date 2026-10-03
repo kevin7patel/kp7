@@ -188,7 +188,7 @@ export function syncView(s: DashState, now: Date): SyncView {
 
   if (failed) return { kind: 'error', label: 'Sync failing', lastSynced: last, detail: 'The latest scheduled Notion sync failed; showing the last good data.' };
   if (s.offline) return { kind: 'offline', label: 'Offline', lastSynced: last, detail: 'Could not reach the server; showing cached data.' };
-  if (p.source.kind === 'notion-mcp-snapshot') return { kind: age > dashboardConfig.freshness.staleAfterMinutes ? 'stale' : 'snapshot', label: 'Snapshot', lastSynced: last, detail: p.source.coverage === 'metadata-only' ? 'Titles-only snapshot captured by Claude. Live sync starts once the Notion token is configured.' : 'Point-in-time Notion values captured by Claude, not a live sync. Live sync starts once the Notion token is configured.' };
+  if (p.source.kind === 'notion-mcp-snapshot') return { kind: age > dashboardConfig.freshness.staleAfterMinutes ? 'stale' : 'snapshot', label: 'Snapshot', lastSynced: last, detail: p.source.coverage === 'metadata-only' ? 'Titles-only snapshot captured through the Notion connector. Live sync starts once the Notion token is configured.' : 'Point-in-time Notion values captured through the Notion connector, not a live sync. Live sync starts once the Notion token is configured.' };
   if (age > dashboardConfig.freshness.staleAfterMinutes) return { kind: 'stale', label: 'Stale', lastSynced: last, detail: `No successful sync in ${Math.round(age / 60)}h (expected every 30 min).` };
   return { kind: 'live', label: 'Synced', lastSynced: last, detail: 'Synced from Notion.' };
 }

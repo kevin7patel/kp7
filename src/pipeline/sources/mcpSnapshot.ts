@@ -142,7 +142,7 @@ export class McpSnapshotSource implements SourceAdapter {
         });
       }
       return {
-        source: { kind: 'notion-mcp-snapshot', label: 'Notion snapshot via Claude (structured, not live)', capturedAt: snap.capturedAt, coverage: snap.coverage, notes: snap.limits },
+        source: { kind: 'notion-mcp-snapshot', label: `Notion snapshot via ${snap.capturedBy} (structured, not live)`, capturedAt: snap.capturedAt, coverage: snap.coverage, notes: snap.limits },
         dataSources,
         unmapped: [],
         ...common,

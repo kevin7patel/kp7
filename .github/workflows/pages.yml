@@ -1,0 +1,38 @@
+# Explicit deployment is required: commits made by GITHUB_TOKEN do not trigger
+# a branch-based GitHub Pages build. Publish the existing encrypted gh-pages tree.
+name: Publish website
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  pages:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: .pages-site
+      - uses: actions/configure-pages@v5
+      - name: Ensure personal data is encrypted
+        run: |
+          test ! -f .pages-site/data/dashboard.json || { echo "Plaintext payload must not be published"; exit 1; }
+          if [ -f .pages-site/data/dashboard.enc.json ]; then
+            node -e 'const e = require("./.pages-site/data/dashboard.enc.json"); if (e.alg !== "AES-256-GCM" || typeof e.ct !== "string" || e.entities) process.exit(1)'
+          fi
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .pages-site
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

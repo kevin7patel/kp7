@@ -54,7 +54,7 @@ required sources with last-good preservation; synthetic fixtures; nothing privat
 | **SYNC data** | `sync.yml`: GitHub Actions cron every 30 min + manual dispatch + `repository_dispatch: notion-change` (hook for a future webhook relay). |
 | **RECALCULATE** | Metrics are recomputed from normalized entities in the browser on every load and every minute (for date rollover). |
 | **RENDER** | React re-renders only from the recomputed model; the payload is re-fetched on open, on focus (>2 min), every 15 min while open, and on reconnect. |
-| **REDESIGN** | `deploy.yml` rebuilds the app only when code changes on `main`. Data syncs never rebuild the app. |
+| **REDESIGN** | `deploy.yml` rebuilds the app only when code changes on `main`. Data syncs never rebuild the app. Both invoke `pages.yml` to deploy the current encrypted `gh-pages` tree explicitly. GitHub Pages source must be GitHub Actions. |
 | Change detection | HMAC (keyed with the dashboard key) of entities + facts + map; unchanged Notion content produces no commit. |
 | Event-driven | Not available in the current environment: Notion webhooks need a public HTTPS receiver, and this setup has no server. The `notion-change` dispatch trigger is ready for a relay (e.g. a free Cloudflare Worker) if wanted later. |
 
@@ -69,6 +69,9 @@ repository (GitHub Pages on private repos needs a paid plan, so it requires his 
 - The key arrives via a URL fragment (`#k=`), which browsers never send to servers.
 - Workflow logs contain stage names and counts, never Notion content. Errors are reduced to codes.
 - The integration needs **Read content** only; the code issues only GET and query/search POSTs (asserted in tests).
+- Missing GitHub secrets fail configuration instead of producing a successful run that skipped the sync.
+- Settings guides setup with direct account/database links. Keys are generated on-device, masked by default,
+  and reused when present; the Notion token is entered only in GitHub.
 
 ## Freshness states (sync pill + banner)
 `live` · `snapshot` (Claude-captured, not live; structured or titles-only) · `stale` (no successful sync in 90 min) · `error`

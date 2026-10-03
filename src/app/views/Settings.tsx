@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { dashboardConfig } from '../../../config/dashboard.config';
-import { generateKey } from '../../shared/crypto';
 import type { useDashboard } from '../data/useDashboard';
 import { KEYS, store } from '../data/storage';
 import type { useTheme } from '../theme';
-import { Icon } from '../components/Icon';
 import { Card, Seg } from '../components/ui';
+import { SetupGuide } from './SetupGuide';
 
 declare const __APP_VERSION__: string;
 declare const __BUILD_TIME__: string;
@@ -13,19 +12,13 @@ declare const __BUILD_TIME__: string;
 const { owner, repo } = dashboardConfig.github;
 const REPO_URL = `https://github.com/${owner}/${repo}`;
 
-function copy(text: string) {
-  void navigator.clipboard?.writeText(text).catch(() => undefined);
-}
-
 export function Settings({ theme, dash }: { theme: ReturnType<typeof useTheme>; dash: ReturnType<typeof useDashboard> }) {
   const [keyInput, setKeyInput] = useState('');
   const [keyError, setKeyError] = useState<string | null>(null);
-  const [generated, setGenerated] = useState<string | null>(null);
   const [gh, setGh] = useState('');
   const [, force] = useState(0);
   const hasKey = !!store.get(KEYS.dataKey);
   const hasGh = !!store.get(KEYS.ghToken);
-  const unlockBase = `${location.origin}${location.pathname}`;
 
   return (
     <>
@@ -35,7 +28,8 @@ export function Settings({ theme, dash }: { theme: ReturnType<typeof useTheme>; 
           <p>Preferences are stored on this device only.</p>
         </div>
       </div>
-      <div className="grid">
+      <SetupGuide dash={dash} onKeyCreated={() => force((n) => n + 1)} />
+      <div className="grid" style={{ marginTop: 18 }}>
         <div className="span-6 stack">
           <Card title="Appearance" icon="sun">
             <div className="setting">
@@ -70,7 +64,7 @@ export function Settings({ theme, dash }: { theme: ReturnType<typeof useTheme>; 
                 The published data is encrypted because this repository is public. Paste the key (or open your unlock link) once per device.
               </div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                <input className="input mono" style={{ flex: '1 1 220px' }} placeholder="Paste dashboard key" value={keyInput} onChange={(e) => setKeyInput(e.target.value)} aria-label="Dashboard key" autoComplete="off" spellCheck={false} />
+                <input className="input mono" type="password" style={{ flex: '1 1 220px' }} placeholder="Paste dashboard key" value={keyInput} onChange={(e) => setKeyInput(e.target.value)} aria-label="Dashboard key" autoComplete="off" spellCheck={false} />
                 <button
                   className="btn primary"
                   onClick={() => {
@@ -100,33 +94,6 @@ export function Settings({ theme, dash }: { theme: ReturnType<typeof useTheme>; 
                 )}
               </div>
               {keyError && <div style={{ color: 'var(--critical-ink)', fontSize: 13, marginTop: 6 }}>{keyError}</div>}
-            </div>
-            <div className="setting" style={{ display: 'block' }}>
-              <div className="s-title">Generate a new key</div>
-              <div className="s-desc" style={{ marginBottom: 10 }}>
-                Created on this device; nothing is sent anywhere. Save it as the <span className="code">DASHBOARD_KEY</span> repository secret, then open the unlock link on each device.
-              </div>
-              <button className="btn" onClick={() => setGenerated(generateKey())}>
-                <Icon name="key" size={15} /> Generate key
-              </button>
-              {generated && (
-                <div style={{ display: 'grid', gap: 8, marginTop: 12 }}>
-                  <div>
-                    <div className="tag">Key</div>
-                    <span className="code">{generated}</span>{' '}
-                    <button className="btn ghost" onClick={() => copy(generated)}>
-                      Copy
-                    </button>
-                  </div>
-                  <div>
-                    <div className="tag">Unlock link (keep private)</div>
-                    <span className="code">{`${unlockBase}#k=${generated}`}</span>{' '}
-                    <button className="btn ghost" onClick={() => copy(`${unlockBase}#k=${generated}`)}>
-                      Copy
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
           </Card>
 
@@ -173,20 +140,6 @@ export function Settings({ theme, dash }: { theme: ReturnType<typeof useTheme>; 
               </li>
               <li>Open your unlock link once on each device so the key is stored locally.</li>
             </ol>
-          </Card>
-          <Card title="Connect live Notion sync" icon="bolt">
-            <ol className="steps">
-              <li>
-                Create an internal integration at <a href="https://www.notion.so/profile/integrations" target="_blank" rel="noreferrer">notion.so/profile/integrations</a> with <strong>Read content</strong> only, and share <em>Kevin’s Life &amp; Hotel Command Center</em>, <em>HOTELS OPS</em> and <em>Goals Tracker</em> with it.
-              </li>
-              <li>
-                Add repository secrets <span className="code">NOTION_TOKEN</span> and <span className="code">DASHBOARD_KEY</span> in GitHub → Settings → Secrets and variables → Actions.
-              </li>
-              <li>Enable GitHub Pages (Settings → Pages → Deploy from branch → gh-pages).</li>
-            </ol>
-            <a className="btn" style={{ marginTop: 12 }} href={`${REPO_URL}/blob/main/docs/setup.md`} target="_blank" rel="noreferrer">
-              Full setup guide <Icon name="external" size={14} />
-            </a>
           </Card>
           <Card title="About" icon="info">
             <dl className="kv">

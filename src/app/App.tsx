@@ -116,8 +116,8 @@ export function App() {
           <strong>{state.payload.source.coverage === 'metadata-only' ? 'Snapshot mode · titles only' : 'Snapshot mode · real values, not live'}</strong>
           <p>
             {state.payload.source.coverage === 'metadata-only'
-              ? `Real task, project and goal titles read from Notion by Claude on ${fmtDateTime(state.payload.source.capturedAt)}. Status, due dates, priorities and live sync switch on once the Notion integration token is configured.`
-              : `Real Notion values captured by Claude on ${fmtDateTime(state.payload.source.capturedAt)}. They will not change until the next capture; live 30-minute sync starts once the Notion integration token is configured.`}
+              ? `Real task, project and goal titles read through the Notion connector on ${fmtDateTime(state.payload.source.capturedAt)}. Status, due dates, priorities and live sync switch on once the Notion integration token is configured.`
+              : `Real Notion values captured through the Notion connector on ${fmtDateTime(state.payload.source.capturedAt)}. They will not change until the next capture; live 30-minute sync starts once the Notion integration token is configured.`}
           </p>
         </div>
         <div className="actions">

@@ -1,5 +1,25 @@
 # Setup
 
+## Kevin — start here
+
+1. [Open website settings](https://github.com/kevin7patel/kp7/settings/pages). Set **Source → GitHub Actions**.
+2. [Open the guided dashboard setup](https://kevin7patel.github.io/kp7/#/settings).
+   It links directly to the original Tasks, Projects, Meal Log and Training & Progress databases,
+   creates a private dashboard key on your device, and links to GitHub's secret boxes and first sync.
+3. Create the read-only Notion connection and enter `NOTION_TOKEN` and `DASHBOARD_KEY`
+   **directly into GitHub**. Keep the private unlock link in your password manager.
+4. [Run Notion sync](https://github.com/kevin7patel/kp7/actions/workflows/sync.yml), then refresh the dashboard.
+
+If the website is not available after enabling Pages, run
+[Deploy app](https://github.com/kevin7patel/kp7/actions/workflows/deploy.yml) once.
+After that, code changes and changed encrypted data publish automatically.
+No paid plan is required for this public repository. Notion records remain unchanged.
+
+The assistant's Notion and GitHub connectors are separate from the website's runtime connection.
+They cannot create the internal integration or enter repository secrets. Never send tokens or keys
+to an assistant. A successful CI build is not proof of a live Notion sync: the first-sync workflow
+must finish and the dashboard must load a Notion API payload.
+
 ## Verified environment and commands (October 2, 2026, cloud session)
 
 Node 22.22 / npm 10.9 with one lockfile (`package-lock.json`). Vite 6, React 18, TypeScript 5.9
@@ -8,11 +28,11 @@ Node 22.22 / npm 10.9 with one lockfile (`package-lock.json`). Vite 6, React 18,
 | Command | What it does | Status |
 |---|---|---|
 | `npm ci` | install | verified |
-| `npm run verify` | lint + typecheck + unit/pipeline tests + build | verified (20 tests) |
+| `npm run verify` | lint + typecheck + unit/pipeline tests + build | verified (23 tests) |
 | `npm run sync` | pipeline: live Notion with `NOTION_TOKEN`, else the gitignored MCP snapshot | verified on the snapshot (11/11 invariants) |
 | `npm run dev` / `npx vite preview --port 4173` | local app; **Sync now** posts to a same-origin-only `/api/sync` | verified |
 | `npm run screenshots` (`-- --demo`) | 1440×900, 1512×982, 1280×800, iPad, 390×844, 375×667 × light/dark → `.artifacts/` | verified, no overflow/console errors |
-| `npm run states` | 14 synthetic scenarios (live, stale, error, locked, wrong key, unlock link, disconnected, offline, real service-worker offline, provenance, theme, mobile nav, area filter) | verified |
+| `npm run states` | 17 synthetic scenarios, including guided key creation/reuse, clipboard fallback and real service-worker offline use | verified |
 
 Blockers seen in this cloud session: `api.notion.com` is not on the network allowlist (proxy 403)
 and no `NOTION_TOKEN` exists, so the live adapter is tested only against a mocked API. GitHub push
@@ -27,14 +47,15 @@ runtime authentication for the app.
 Everything below is free: a Notion internal integration, GitHub Actions minutes on a
 public repo, and GitHub Pages. Nothing here creates a paid subscription.
 
-The dashboard works today from a point-in-time structured snapshot captured by Claude. These
-steps switch it to live Notion data that re-syncs every 30 minutes.
+If a local snapshot exists, it is labelled as a point-in-time capture. The public site shows no
+personal data until an encrypted payload is published. These steps enable live Notion sync about
+every 30 minutes; GitHub may delay scheduled runs.
 
 ## 1. Create a read-only Notion integration
 1. Go to <https://www.notion.so/profile/integrations> → **New integration**.
 2. Name it `Command Center (read-only)`, workspace *Kevin Patel's Space*, type **Internal**.
 3. Capabilities: tick **Read content** only. Leave *Update content*, *Insert content*
-   and comments unticked. The dashboard never writes to Notion.
+   and comments unticked; set **No user information**. The dashboard never writes to Notion.
 4. Copy the **Internal Integration Secret** (starts with `ntn_` or `secret_`). Do not paste
    it into chat.
 
@@ -43,12 +64,15 @@ On each page below: `•••` menu → **Connections** → add `Command Center
 Share the **original** databases — a linked view alone is not enough. Sharing a parent shares
 everything inside it.
 - **Tasks** and **Projects** (required — the sync fails safely without them)
-- **Build a Better Me** and **Goals Tracker** (optional)
+- [Meal Log](https://app.notion.com/p/4ff20876820c468f8e1c8b5ce430028c) and
+  [Training & Progress](https://app.notion.com/p/327983e6b19c43bebfd868335e0c6850) (optional, for food and fitness)
+- **Build a Better Me** (optional, for the program status line). Goals Tracker examples remain excluded.
 - Any future database you want on the dashboard (Daily Log, Workouts, Meals, Body Metrics).
 
 ## 3. Generate the dashboard key
 The repo is public, so the published data is encrypted (AES-256-GCM). Open the dashboard,
-go to **Settings → Generate a new key**, and copy both the key and the unlock link.
+go to **Settings → Set up your Command Center → Generate dashboard key**, and copy the key and private unlock link.
+The generated key is saved on the current device immediately. Existing keys are reused.
 (Or run `openssl rand -base64 32 | tr '+/' '-_' | tr -d '='`.)
 
 ## 4. Add two GitHub repository secrets
@@ -59,11 +83,13 @@ GitHub → `kevin7patel/kp7` → **Settings → Secrets and variables → Action
 | `NOTION_TOKEN` | the integration secret from step 1 |
 | `DASHBOARD_KEY` | the key from step 3 |
 
-## 5. Merge to `main` and enable GitHub Pages
-1. Merge the `claude/laughing-heisenberg-u9d2gx` branch into `main` (the scheduled sync and
-   deploy workflows only run from the default branch).
-2. The **Deploy app** workflow creates the `gh-pages` branch.
-3. GitHub → **Settings → Pages** → Source **Deploy from a branch** → Branch `gh-pages` / `(root)` → Save.
+## 5. Enable GitHub Pages
+1. The original app is already merged into `main`; scheduled workflows run from that branch.
+2. **Deploy app** builds the app and preserves encrypted data on `gh-pages`.
+3. GitHub → **Settings → Pages** → Source **GitHub Actions**.
+   The reusable **Publish website** workflow explicitly deploys the `gh-pages` tree after app
+   builds and changed data syncs. Branch-only publishing is insufficient because commits made
+   with `GITHUB_TOKEN` do not trigger a GitHub Pages build.
 4. Actions → **Notion sync** → **Run workflow** for the first sync (after that it runs every 30 minutes).
 5. Your dashboard is at <https://kevin7patel.github.io/kp7/>.
 
@@ -97,6 +123,8 @@ environment secret. Not needed for GitHub Actions or local use.
 | Symptom | Fix |
 |---|---|
 | Sync run fails with `notion_401` | Token wrong or revoked — re-copy it into `NOTION_TOKEN`. |
+| Sync configuration fails | Add both GitHub secrets. No Notion sync ran; missing configuration is reported as a failure. |
+| Publish website fails at Configure Pages | Set Settings → Pages → Source to GitHub Actions, then rerun Deploy app or Publish website. |
 | Sync fails with `required_source_failed` | Tasks or Projects isn't shared with the integration; the last good data stays live. |
 | Sources shows “not shared with the integration (404)” | Add the integration under that page's **Connections**. |
 | Dashboard asks for a key / “can’t unlock” | Open the unlock link again, or paste `DASHBOARD_KEY` in Settings. |

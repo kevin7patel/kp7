@@ -13,6 +13,8 @@ is on the dashboard's **Sources** screen.
 | Projects | data source `a862fc2e-e045-45a0-972b-6592df011baa` | Real longer-term outcomes | yes |
 | Goals Tracker | data source `32d38b58-7685-8064-90bb-000b08e4d5ae` | Example/template rows — excluded in V1 | no |
 | Build a Better Me | page `3ed38b58-7685-817c-bbb1-d66caef90823` | Fitness plan; status line shown, no observations yet | no |
+| Meal Log | data source `d54e44a6-8fbf-4829-9959-0a4c1f2e33a4` | Recorded food and estimates | no |
+| Training & Progress | data source `55cedb1b-58f8-49c3-a2ce-7bea7e4f161e` | Mixed tracker; dated Workout rows only | no |
 | Command Center, Master Checklist | pages `3eb38b58…b219`, `3ec38b58…624e` | Context and links | no |
 
 A failure on a required source fails the sync and keeps the last good payload; optional sources
@@ -54,6 +56,21 @@ Title, Status, Priority, Owner, Due date, Start/End value, Quarter, Team, Progre
 formulas. Rows look like corporate examples (2025 due dates); personal authenticity is unconfirmed, so
 `goalsTrackerConfirmed: false` excludes them. No Current value or history exists.
 
+## Meal Log and Training & Progress
+
+Meal Log is inside Food Log / Build a Better Me. `Date` is the local meal date; `Captured at`
+is a separate timestamp. `Calories` is the central value, distinct from `Calories low` and
+`Calories high`. `Protein g`, `Carbs g`, `Fat g`, `Total sugar g`, `Added sugar g`, `Basis` and
+`Confidence` retain supplied values or unknowns. The dashboard labels sums as logged subtotals:
+there is no structured full-day-completion property, so complete intake coverage is unconfirmed.
+
+Training & Progress has `Entry` title, `Type`, `Status`, `Date`, `Minutes`, `Source` and `Capture ID`.
+Types include Workout, Check-in, Measurements, Progress photos, Weekly review and Milestone.
+Only dated `Type = Workout` rows enter the workout model. Only `Status = Completed` counts
+toward completed training; plans, partial/skipped sessions and unknown completion do not.
+The current schema has no numeric body measurements or habit checkboxes. Other entry types
+are not reinterpreted as workouts, health samples, or completed morning/evening habits.
+
 ## Category coverage
 
 | Category | Status | Source / unlock |
@@ -62,7 +79,8 @@ formulas. Rows look like corporate examples (2025 due dates); personal authentic
 | Projects / outcomes | connected | Projects |
 | Goals | excluded | Goals Tracker — confirm or replace rows |
 | Habits / check-ins | missing | Build a Better Me defines a 9 AM check-in and 10 PM journal; a **Daily Log** database would make them chartable |
-| Fitness, nutrition, health | missing | Build a Better Me records no observations yet; add Workouts / Meals / Body Metrics databases |
+| Fitness and nutrition | mapped; live access awaits runtime integration | Share Meal Log and Training & Progress; empty data remains missing |
+| Health | missing until recorded | Body/sleep/WHOOP metrics require actual structured values or verified imports |
 | Automations / agents | missing | An Automation Registry database would enable the agent-status cards |
 | Finance, travel | mapped, not shown | Credit Card Benefits Tracker, Travel Packing List (ignored in V1) |
 

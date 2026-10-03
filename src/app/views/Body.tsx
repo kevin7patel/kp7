@@ -111,7 +111,7 @@ function MacroRing({ m, color }: { m: MetricValue; color: string }) {
           <div style={{ fontWeight: 680, fontSize: 22 }}>{missing ? '—' : (m.display ?? fmtNum(m.value ?? 0))}</div>
           {!missing && m.value != null && <div className="tag">{m.target ? `of ${fmtNum(m.target)} ${m.unit}` : m.unit}</div>}
         </Ring>
-        <div className="tag" style={{ textAlign: 'center' }}>
+        <div className="tag" style={{ textAlign: 'center', whiteSpace: 'normal', maxWidth: '100%' }}>
           {missing ? 'Unknown — not tracked yet' : (m.note ?? (m.target ? '' : 'No target set'))}
         </div>
       </div>
@@ -122,8 +122,12 @@ function MacroRing({ m, color }: { m: MetricValue; color: string }) {
 function Nutrition({ model, facts }: { model: DashboardModel; facts: Fact[] }) {
   const m = model.metrics;
   const has = model.ctx.e.nutrition.length > 0;
+  const today = model.ctx.e.nutrition.filter((entry) => entry.date === model.ctx.today);
   return (
     <>
+      {today.length > 0 && <div className="banner info" role="status">
+        <div><strong>Today so far · {today.length} logged meal{today.length === 1 ? '' : 's'}</strong><p>These are logged subtotals. Full-day coverage is unconfirmed; estimates stay estimates and missing nutrients stay unknown.</p></div>
+      </div>}
       <div className="grid">
         <MacroRing m={m['nutrition.calories']!} color={DOMAIN_COLOR.nutrition} />
         <MacroRing m={m['nutrition.protein']!} color={DOMAIN_COLOR.nutrition} />
@@ -146,6 +150,13 @@ function Nutrition({ model, facts }: { model: DashboardModel; facts: Fact[] }) {
           <Card className="span-12" title="Protein · 14 days" color={DOMAIN_COLOR.nutrition} right={<ProvenanceChip m={m['nutrition.protein']!} />}>
             {m['nutrition.protein']!.series ? <Columns series={m['nutrition.protein']!.series} color={DOMAIN_COLOR.nutrition} label="Protein per day" target={m['nutrition.protein']!.target} format={(v) => `${fmtNum(v)} g`} height={110} /> : <EmptyState title="Protein not tracked" />}
           </Card>
+          {today.length > 0 && <Card className="span-12" title="Today's recorded meals" color={DOMAIN_COLOR.nutrition}>
+            {today.map((entry) => <div className="setting" key={entry.id}>
+              <div className="s-body"><div className="s-title">{entry.label ?? 'Meal'}{entry.prov.url && <> · <a href={entry.prov.url} target="_blank" rel="noreferrer">Open in Notion</a></>}</div>
+                <div className="s-desc">{entry.basis ?? 'Basis not recorded'}{entry.confidence ? ` · ${entry.confidence.toLowerCase()} confidence` : ''} · {entry.calories != null ? `${fmtNum(entry.calories)} kcal` : 'Calories unknown'}{entry.caloriesLow != null && entry.caloriesHigh != null ? ` (estimated range ${fmtNum(entry.caloriesLow)}–${fmtNum(entry.caloriesHigh)})` : ''} · {entry.protein != null ? `${fmtNum(entry.protein)} g protein` : 'Protein unknown'} · {entry.totalSugar != null ? `${fmtNum(entry.totalSugar)} g total sugar` : 'Total sugar unknown'} · {entry.addedSugar != null ? `${fmtNum(entry.addedSugar)} g added sugar` : 'Added sugar unknown'}</div>
+              </div>
+            </div>)}
+          </Card>}
         </div>
       )}
     </>
