@@ -1,0 +1,52 @@
+# Connection check: verifies NOTION_TOKEN and which databases the integration can read.
+# Needs only NOTION_TOKEN. Publishes nothing; the plaintext stays on the ephemeral runner.
+# The summary lists database names, row counts and access errors — never record content.
+name: Notion connection check
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Require NOTION_TOKEN
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+        run: |
+          if [ -z "$NOTION_TOKEN" ]; then
+            echo "::error::Add the NOTION_TOKEN repository secret first."
+            exit 1
+          fi
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Read Notion (no publish)
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+        run: npm run sync -- --source=api
+      - name: Summarize access
+        if: always()
+        run: |
+          node -e '
+            const fs = require("fs");
+            const out = [];
+            const status = fs.existsSync(".data/status.json") ? JSON.parse(fs.readFileSync(".data/status.json", "utf8")) : null;
+            out.push("### Notion connection check", "", `- ok: ${status ? status.ok : "no status"}`);
+            if (status && status.error) out.push(`- error: ${status.error.code} — ${status.error.message}`);
+            if (fs.existsSync(".data/dashboard.json")) {
+              const p = JSON.parse(fs.readFileSync(".data/dashboard.json", "utf8"));
+              out.push("", "| Database | Entity | Rows |", "|---|---|---|");
+              for (const s of p.schema) out.push(`| ${s.database} | ${s.entity} | ${s.rowCount} |`);
+              if (p.sync.warnings.length) out.push("", "**Notes**", ...p.sync.warnings.map((w) => `- ${w}`));
+            }
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, out.join("\n") + "\n");
+            console.log(out.join("\n"));
+          '
