@@ -80,9 +80,13 @@ repository (GitHub Pages on private repos needs a paid plan, so it requires his 
 (latest scheduled run failed; last good data shown) · `offline` (cached data) · `locked` (key needed) · `demo`.
 
 ## Design system
-Semantic tokens in `src/app/styles/tokens.css`; light (warm paper, soft elevation) and dark
-(graphite, hairline highlights, luminous rings) are designed separately. Data hues per domain —
-tasks blue, fitness orange, nutrition aqua, goals yellow, habits magenta, health violet —
-validated with the dataviz palette checker against the actual card surfaces:
-light `#ffffff` PASS (contrast WARN → every mark has a visible text label), dark `#141517` PASS.
+"Performance lab" look (v2): semantic tokens in `src/app/styles/tokens.css`, presentation layer in
+`src/app/styles/perf.css` (loaded after `app.css`). Dark is the hero mode (near-black canvas,
+graphite cards with a faint sheen, luminous rings, bold tabular numerals, small-caps labels);
+light is designed separately (cool, crisp paper). Today opens with the **Day Pulse** hero:
+a Top 3 ring (picks done ÷ picks set in Notion), a data-derived coach line, and four big stats
+(overdue, due today, waiting, blockers/top priority). No composite or invented scores.
+Data hues per domain — tasks blue, fitness orange, nutrition aqua, goals amber, habits magenta,
+health violet — validated with the dataviz palette checker against each mode's card surface:
+light `#ffffff` ALL PASS, dark `#12161b` ALL PASS. Text tokens meet WCAG AA (hint text ≥ 4.9:1).
 Status colours (critical/warning/serious/good) are reserved for state and always paired with an icon + label.

@@ -111,6 +111,25 @@ export function StatTile({ m, color, icon, spark = false, compact = false, class
   );
 }
 
+/** Big-number stat for the Day Pulse hero. Same provenance chip and missing-state rules as StatTile. */
+export function HeroStat({ m, color, alert = false }: { m: MetricValue; color: string; alert?: boolean }) {
+  const missing = m.quality === 'missing' || m.value == null;
+  const shown = missing ? '—' : (m.display ?? fmtNum(m.value!));
+  return (
+    <section className={`hstat${alert && !missing && m.value! > 0 ? ' alert' : ''}`} aria-label={m.label} style={{ ['--hs' as string]: color }}>
+      <div className="hs-top">
+        <span className="hs-label">{m.label}</span>
+        <ProvenanceChip m={m} />
+      </div>
+      <div className={`value${missing ? ' unknown' : ''}`}>
+        {missing && <span className="sr-only">Unknown</span>}
+        {shown}
+      </div>
+      <div className="hs-foot">{missing ? shortReason(m.note) : (m.note ?? m.period)}</div>
+    </section>
+  );
+}
+
 function shortReason(note?: string): string {
   if (!note) return 'Unknown';
   if (/token|notion api|integration/i.test(note)) return 'Needs Notion API';
