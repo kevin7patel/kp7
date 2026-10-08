@@ -99,3 +99,24 @@ describe('demo data', () => {
     expect(m.metrics['projects.active']!.quality).toBe('demo');
   });
 });
+
+describe('sync freshness from GitHub runs', () => {
+  it('ignores cancelled runs so a superseded run never hides the last real result', async () => {
+    const { latestRun } = await import('../src/app/data/github');
+    const run = (id: number, conclusion: string) => ({ id, status: 'completed', conclusion, updated_at: `2026-10-08T0${id}:00:00Z`, created_at: `2026-10-08T0${id}:00:00Z`, html_url: `https://example.test/${id}`, event: 'schedule' });
+    const realFetch = globalThis.fetch;
+    let requested = '';
+    globalThis.fetch = (async (url: string) => {
+      requested = url;
+      return new Response(JSON.stringify({ workflow_runs: [run(3, 'cancelled'), run(2, 'success'), run(1, 'failure')] }), { status: 200 });
+    }) as typeof fetch;
+    try {
+      const r = await latestRun();
+      expect(requested).toContain('status=completed');
+      expect(r?.id).toBe(2);
+      expect(r?.conclusion).toBe('success');
+    } finally {
+      globalThis.fetch = realFetch;
+    }
+  });
+});

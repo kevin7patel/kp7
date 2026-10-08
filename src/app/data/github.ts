@@ -18,14 +18,18 @@ export interface RunInfo {
   event: string;
 }
 
+/**
+ * The latest *finished* sync that says something about freshness. Queued, running, cancelled
+ * and skipped runs are ignored, so a superseded run never hides the last real success or failure.
+ */
 export async function latestRun(token?: string | null): Promise<RunInfo | null> {
-  const res = await fetch(`${API}/runs?per_page=1&branch=${ref}`, {
+  const res = await fetch(`${API}/runs?per_page=10&branch=${ref}&status=completed`, {
     headers: { Accept: 'application/vnd.github+json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
     cache: 'no-store',
   });
   if (!res.ok) return null;
   const body = (await res.json()) as { workflow_runs?: { id: number; status: string; conclusion: string | null; updated_at: string; created_at: string; html_url: string; event: string }[] };
-  const r = body.workflow_runs?.[0];
+  const r = body.workflow_runs?.find((x) => x.status === 'completed' && x.conclusion !== 'cancelled' && x.conclusion !== 'skipped');
   return r ? { id: r.id, status: r.status, conclusion: r.conclusion, updatedAt: r.updated_at, createdAt: r.created_at, url: r.html_url, event: r.event } : null;
 }
 

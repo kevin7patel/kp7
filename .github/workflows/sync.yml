@@ -16,16 +16,18 @@ permissions:
   pages: write
   id-token: write
 
-concurrency:
-  group: gh-pages
-  cancel-in-progress: false
-
 jobs:
   sync:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # Serializes pushes to the gh-pages branch. Job-level on purpose: a Pages deploy that is
+    # stuck waiting must never hold this queue and block later syncs.
+    concurrency:
+      group: gh-pages-branch
+      cancel-in-progress: false
     outputs:
       changed: ${{ steps.publish.outputs.changed }}
+      deploy: ${{ steps.live.outputs.deploy }}
     steps:
       - name: Check configuration
         id: cfg
@@ -43,9 +45,9 @@ jobs:
             echo "configured=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         if: steps.cfg.outputs.configured == 'true'
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         if: steps.cfg.outputs.configured == 'true'
         with:
           node-version: 22
@@ -81,7 +83,20 @@ jobs:
             echo "- content changed: $changed"
           } >> "$GITHUB_STEP_SUMMARY"
 
+      # Deploy when content changed OR when the live site still serves an older payload than the
+      # gh-pages branch (e.g. an earlier deploy was cancelled after its branch push).
+      - name: Is the live site current?
+        id: live
+        if: steps.cfg.outputs.configured == 'true'
+        run: |
+          git fetch --depth 1 origin gh-pages 2>/dev/null || true
+          branch=$(git show origin/gh-pages:data/content.hmac 2>/dev/null | tr -d '[:space:]')
+          site=$(curl -fsSL --max-time 20 "https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/data/content.hmac?t=$(date +%s)" 2>/dev/null | tr -d '[:space:]' || true)
+          if [ "${{ steps.publish.outputs.changed }}" = "true" ] || [ -z "$site" ] || [ "$branch" != "$site" ]; then deploy=true; else deploy=false; fi
+          echo "deploy=$deploy" >> "$GITHUB_OUTPUT"
+          echo "- live site current before deploy: $([ -n "$site" ] && [ "$branch" = "$site" ] && echo yes || echo no) · deploying: $deploy" >> "$GITHUB_STEP_SUMMARY"
+
   publish:
     needs: sync
-    if: needs.sync.outputs.changed == 'true'
+    if: needs.sync.outputs.deploy == 'true'
     uses: ./.github/workflows/pages.yml

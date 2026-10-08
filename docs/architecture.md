@@ -55,7 +55,9 @@ required sources with last-good preservation; synthetic fixtures; nothing privat
 | **RECALCULATE** | Metrics are recomputed from normalized entities in the browser on every load and every minute (for date rollover). |
 | **RENDER** | React re-renders only from the recomputed model; the payload is re-fetched on open, on focus (>2 min), every 15 min while open, and on reconnect. |
 | **REDESIGN** | `deploy.yml` rebuilds the app only when code changes on `main`. Data syncs never rebuild the app. Both invoke `pages.yml` to deploy the current encrypted `gh-pages` tree explicitly. GitHub Pages source must be GitHub Actions. |
-| Change detection | HMAC (keyed with the dashboard key) of entities + facts + map; unchanged Notion content produces no commit. |
+| Change detection | HMAC (keyed with the dashboard key) of entities + facts + map; unchanged Notion content produces no commit. The sync also compares the live site's `data/content.hmac` with the branch and redeploys when the site lags (e.g. after a cancelled deploy). |
+| Queues | Branch pushes share the job-level `gh-pages-branch` queue; Pages deploys use `pages-deploy` with cancel-in-progress, so a deploy stuck waiting on the `github-pages` environment is replaced by the next one and never blocks syncs. |
+| Schedule reality | GitHub runs `*/30` crons late on quiet repos (observed ~6 h apart). The app reads freshness from the latest finished, non-cancelled run and says so in the Stale banner. |
 | Event-driven | Not available in the current environment: Notion webhooks need a public HTTPS receiver, and this setup has no server. The `notion-change` dispatch trigger is ready for a relay (e.g. a free Cloudflare Worker) if wanted later. |
 
 ## Privacy model (public repository)
