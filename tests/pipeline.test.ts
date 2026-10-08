@@ -63,6 +63,8 @@ describe('Notion API adapter → pipeline (verified Tasks/Projects schema, inven
     expect(v('tasks.inProgress').value).toBe(1);
     expect(v('tasks.doneNow').value).toBe(2);
     expect(v('tasks.deferred').value).toBe(1);
+    // Top 3 ring: picks set in Notion are the explicit denominator.
+    expect(v('tasks.top3')).toMatchObject({ value: 0, display: '0/1', ratio: 0, quality: 'real' });
     // No explicit "needs Kevin" signal in the real schema → honest "Waiting", not "Waiting on you".
     expect(v('tasks.waitingOnKevin').label).toBe('Waiting');
     expect(v('tasks.waitingOnKevin').value).toBe(1);

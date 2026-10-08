@@ -90,3 +90,13 @@ are not reinterpreted as workouts, health samples, or completed morning/evening 
 3. **Daily Log** database (Date + habit checkboxes) → check-in streaks and the heatmap.
 4. **Target date** on Projects → countdowns and the milestone timeline.
 5. Personal rows in Goals Tracker with Start / Current / Target values (archive the samples).
+
+## Decisions (Oct 8, 2026 — Kevin delegated these to Claude)
+| Topic | Decision | Notion change (by Kevin or the agents; the dashboard never writes) |
+|---|---|---|
+| Waiting on you | Use an explicit flag | Add a **Needs Kevin** checkbox to Tasks; tick it when a task needs Kevin's decision or approval. Auto-detected → tile becomes "Waiting on you". |
+| Completion history | Use an explicit date | Add a **Completed** date property to Tasks; set it whenever Done is ticked. Auto-detected → completion chart, weekly rate and streaks switch on. |
+| Goals | Projects are the goals | Goals Tracker stays excluded. Add a **Target date** to each active project for countdowns and the timeline. |
+| Default view | All (hotel + personal) | None — each device remembers the last area filter. |
+| Hosting | Encrypted payload on free GitHub Pages | None. |
+| On-demand sync token | Not now | None (optional later). |

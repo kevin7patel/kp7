@@ -1,11 +1,11 @@
 import { areaLabel } from '../../shared/areas';
 import type { DashboardPayload, Task } from '../../shared/types';
 import type { Bucket, DashboardModel } from '../../metrics';
-import { areaCounts, openTasks, statusCounts } from '../../metrics/tasks';
+import { areaCounts, openTasks, statusCounts, topThree } from '../../metrics/tasks';
 import type { AreaFilter } from '../App';
-import { HBars } from '../components/charts';
+import { HBars, Ring } from '../components/charts';
 import { Icon } from '../components/Icon';
-import { Card, EmptyState, ProjectRow, Seg, StatTile, TaskRow } from '../components/ui';
+import { Card, EmptyState, HeroStat, ProjectRow, ProvenanceChip, Seg, StatTile, TaskRow } from '../components/ui';
 import { DOMAIN_COLOR, fmtNum, greeting } from '../format';
 
 const BUCKETS: { key: Bucket; label: string; icon: string }[] = [
@@ -50,6 +50,54 @@ function summary(model: DashboardModel): React.ReactNode {
   const done = v('tasks.doneToday');
   if (done) parts.push(<span key="x"><strong>{done}</strong> done</span>);
   return parts.length ? parts.flatMap((p, i) => (i ? [' · ', p] : [p])) : 'Nothing due today.';
+}
+
+/** One honest, data-derived coaching line. No scores, no invented targets. */
+function coachLine(model: DashboardModel): React.ReactNode {
+  const m = model.metrics;
+  const v = (id: string) => (m[id]?.quality === 'missing' ? null : (m[id]?.value ?? null));
+  if (!model.capabilities.status) return 'Connect live Notion data to unlock your day plan.';
+  const overdue = v('tasks.overdue') ?? 0;
+  const due = v('tasks.dueToday') ?? 0;
+  const top = m['tasks.top3'];
+  const next = topThree(model.ctx)[0];
+  if (overdue > 0) return <>Clear <span className="em">{overdue} overdue</span> first, then your Top 3.</>;
+  if (top && top.quality !== 'missing' && top.ratio === 1) return <>Top 3 complete. <span className="em">Strong day.</span></>;
+  if (next) return <>Next up: <span className="em">{next.title}</span></>;
+  if (due > 0) return <><span className="em">{due} due today.</span> Knock {due === 1 ? 'it' : 'them'} out early.</>;
+  return 'Nothing due today. Move a project forward.';
+}
+
+function DayPulse({ model }: { model: DashboardModel }) {
+  const m = model.metrics;
+  const top = m['tasks.top3']!;
+  const known = top.quality !== 'missing';
+  const fourth = m['tasks.blocked']!.quality !== 'missing' || m['tasks.highPriority']!.quality === 'missing' ? m['tasks.blocked']! : m['tasks.highPriority']!;
+  return (
+    <section className="card pulse" aria-label="Day pulse">
+      <div className="pulse-ring">
+        <Ring ratio={known ? (top.ratio ?? 0) : null} size={176} stroke={14} color="var(--c-tasks)" label={`Top 3: ${known ? (top.note ?? '') : 'unknown'}`}>
+          <div>
+            <div className={`ring-value${known ? '' : ' unknown'}`}>{known ? top.display : '—'}</div>
+            <div className="ring-label">Top 3 done</div>
+          </div>
+        </Ring>
+        <ProvenanceChip m={top} />
+      </div>
+      <div className="pulse-body">
+        <div className="pulse-kicker">
+          <span className="eyebrow">Today’s focus</span>
+        </div>
+        <p className="coach">{coachLine(model)}</p>
+        <div className="pulse-stats">
+          <HeroStat m={m['tasks.overdue']!} color="var(--critical)" alert />
+          <HeroStat m={m['tasks.dueToday']!} color={DOMAIN_COLOR.tasks} />
+          <HeroStat m={m['tasks.waitingOnKevin']!} color="var(--warn)" />
+          <HeroStat m={fourth} color="var(--serious)" />
+        </div>
+      </div>
+    </section>
+  );
 }
 
 function DayPlan({ model }: { model: DashboardModel }) {
@@ -173,17 +221,7 @@ export function Today({ model, payload, area, setArea }: { model: DashboardModel
         </div>
       </div>
 
-      {/* Operator status strip (R14 pattern): overdue · today · waiting on you · blockers */}
-      <div className="grid">
-        <StatTile m={m['tasks.overdue']!} color="var(--critical)" icon="alert" className="span-3 m-half" />
-        <StatTile m={m['tasks.dueToday']!} color={DOMAIN_COLOR.tasks} icon="calendar" className="span-3 m-half" />
-        <StatTile m={m['tasks.waitingOnKevin']!} color="var(--warn)" icon="waiting" className="span-3 m-half" />
-        {m['tasks.blocked']!.quality !== 'missing' || m['tasks.highPriority']!.quality === 'missing' ? (
-          <StatTile m={m['tasks.blocked']!} color="var(--serious)" icon="block" className="span-3 m-half" />
-        ) : (
-          <StatTile m={m['tasks.highPriority']!} color="var(--serious)" icon="flag" className="span-3 m-half" />
-        )}
-      </div>
+      <DayPulse model={model} />
 
       <div className="grid">
         <div className="span-8 stack">

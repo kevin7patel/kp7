@@ -1,8 +1,12 @@
 /*
- * Semantic design tokens. Light and dark are each designed, not inverted:
- * light = warm paper plane with soft elevation; dark = graphite with hairline
- * highlights and luminous data. Data hues are the validated categorical palette
- * stepped per mode (see dataviz validator results in docs/ARCHITECTURE.md).
+ * Semantic design tokens — "performance lab" look (v2).
+ * Dark is the hero mode: near-black canvas, graphite cards with a faint top sheen,
+ * luminous data. Light is designed separately: cool, crisp, high-contrast paper.
+ * Data hues are the categorical palette stepped per mode and validated with the
+ * dataviz validator against the card surface of each mode (both: ALL CHECKS PASS):
+ *   light #ffffff → #1e6fe0 #e0521b #0c9e74 #c58700 #d53d8a #6c4fd6
+ *   dark  #12161b → #3592f4 #ec5e25 #12a87f #c98500 #ec4f9b #9077f2
+ * Status colors (good / warn / serious / critical) are reserved for state.
  */
 :root {
   color-scheme: light;
@@ -10,111 +14,125 @@
   --font-display: system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
   --mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
 
-  --bg: #f3f2ee;
-  --bg-tint: #ecebe6;
+  --bg: #eef1f4;
+  --bg-tint: #e6eaee;
   --surface: #ffffff;
-  --surface-2: #f7f6f3;
-  --surface-3: #efeee9;
-  --border: rgba(18, 18, 16, 0.08);
-  --border-strong: rgba(18, 18, 16, 0.15);
-  --text: #121211;
-  --text-2: #52514e;
-  --text-3: #85837d;
-  --grid: #e6e5df;
-  --nav-bg: rgba(255, 255, 255, 0.72);
+  --surface-2: #f5f7f9;
+  --surface-3: #eceff3;
+  --border: rgba(12, 18, 26, 0.08);
+  --border-strong: rgba(12, 18, 26, 0.16);
+  --text: #0b0f14;
+  --text-2: #4a5462;
+  --text-3: #5f6976;
+  --grid: #e3e7ec;
+  --nav-bg: rgba(255, 255, 255, 0.78);
 
-  --c-tasks: #2a78d6;
-  --c-fitness: #eb6834;
-  --c-nutrition: #1baf7a;
-  --c-goals: #eda100;
-  --c-habits: #e87ba4;
-  --c-health: #4a3aa7;
-  --accent: #2a78d6;
-  --accent-ink: #1c5cab;
+  --c-tasks: #1e6fe0;
+  --c-fitness: #e0521b;
+  --c-nutrition: #0c9e74;
+  --c-goals: #c58700;
+  --c-habits: #d53d8a;
+  --c-health: #6c4fd6;
+  --accent: #1e6fe0;
+  --accent-ink: #1757b3;
   --on-accent: #ffffff;
 
-  --good: #0ca30c;
-  --good-ink: #006300;
-  --warn: #fab219;
+  --good: #12a150;
+  --good-ink: #0b7a3b;
+  --warn: #e8a317;
   --warn-ink: #8a5a00;
-  --serious: #ec835a;
-  --critical: #d03b3b;
-  --critical-ink: #b42323;
+  --serious: #e46a3a;
+  --critical: #d63a45;
+  --critical-ink: #b4232f;
   --demo: #b4408f;
 
-  --shadow-1: 0 1px 2px rgba(20, 20, 18, 0.04), 0 1px 1px rgba(20, 20, 18, 0.03);
-  --shadow-2: 0 1px 2px rgba(20, 20, 18, 0.05), 0 10px 28px -14px rgba(20, 20, 18, 0.18);
+  --shadow-1: 0 1px 2px rgba(12, 18, 26, 0.05);
+  --shadow-2: 0 1px 2px rgba(12, 18, 26, 0.05), 0 12px 32px -16px rgba(12, 18, 26, 0.22);
   --highlight: inset 0 0 0 1px var(--border);
+  --sheen: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0) 100%);
+  --canvas-glow: radial-gradient(900px 420px at 12% -8%, rgba(30, 111, 224, 0.08), transparent 70%);
   --glow: 0;
 
-  --radius-s: 8px;
-  --radius: 14px;
-  --radius-l: 20px;
+  --radius-s: 10px;
+  --radius: 18px;
+  --radius-l: 24px;
   --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
     color-scheme: dark;
-    --bg: #0a0b0c;
-    --bg-tint: #101113;
-    --surface: #141517;
-    --surface-2: #1a1b1e;
-    --surface-3: #222327;
-    --border: rgba(255, 255, 255, 0.07);
+    --bg: #07090c;
+    --bg-tint: #0b0e12;
+    --surface: #12161b;
+    --surface-2: #181d23;
+    --surface-3: #1f252d;
+    --border: rgba(255, 255, 255, 0.065);
     --border-strong: rgba(255, 255, 255, 0.13);
-    --text: #f2f2ef;
-    --text-2: #b8b7af;
-    --text-3: #84837d;
-    --grid: #26272a;
-    --nav-bg: rgba(16, 17, 19, 0.72);
-    --c-tasks: #3987e5;
-    --c-fitness: #d95926;
-    --c-nutrition: #199e70;
+    --text: #f4f6f8;
+    --text-2: #a9b2bd;
+    --text-3: #828c98;
+    --grid: #232a32;
+    --nav-bg: rgba(9, 11, 14, 0.78);
+    --c-tasks: #3592f4;
+    --c-fitness: #ec5e25;
+    --c-nutrition: #12a87f;
     --c-goals: #c98500;
-    --c-habits: #d55181;
-    --c-health: #9085e9;
-    --accent: #3987e5;
-    --accent-ink: #86b6ef;
-    --good-ink: #2fc22f;
-    --warn-ink: #fab219;
-    --critical-ink: #f07a7a;
+    --c-habits: #ec4f9b;
+    --c-health: #9077f2;
+    --accent: #3592f4;
+    --accent-ink: #8cc2ff;
+    --good: #2fd16a;
+    --good-ink: #5ee08e;
+    --warn: #f5b324;
+    --warn-ink: #f7c75a;
+    --serious: #f2804e;
+    --critical: #f0505e;
+    --critical-ink: #ff8a94;
     --demo: #e07cc0;
     --shadow-1: none;
-    --shadow-2: 0 18px 40px -24px rgba(0, 0, 0, 0.9);
-    --highlight: inset 0 1px 0 rgba(255, 255, 255, 0.045), inset 0 0 0 1px var(--border);
+    --shadow-2: 0 24px 48px -28px rgba(0, 0, 0, 0.95);
+    --highlight: inset 0 1px 0 rgba(255, 255, 255, 0.05), inset 0 0 0 1px var(--border);
+    --sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.028) 0%, rgba(255, 255, 255, 0) 42%);
+    --canvas-glow: radial-gradient(1000px 480px at 10% -10%, rgba(53, 146, 244, 0.13), transparent 70%), radial-gradient(700px 380px at 95% 0%, rgba(18, 168, 127, 0.07), transparent 70%);
     --glow: 1;
   }
 }
 
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --bg: #0a0b0c;
-  --bg-tint: #101113;
-  --surface: #141517;
-  --surface-2: #1a1b1e;
-  --surface-3: #222327;
-  --border: rgba(255, 255, 255, 0.07);
+  --bg: #07090c;
+  --bg-tint: #0b0e12;
+  --surface: #12161b;
+  --surface-2: #181d23;
+  --surface-3: #1f252d;
+  --border: rgba(255, 255, 255, 0.065);
   --border-strong: rgba(255, 255, 255, 0.13);
-  --text: #f2f2ef;
-  --text-2: #b8b7af;
-  --text-3: #84837d;
-  --grid: #26272a;
-  --nav-bg: rgba(16, 17, 19, 0.72);
-  --c-tasks: #3987e5;
-  --c-fitness: #d95926;
-  --c-nutrition: #199e70;
+  --text: #f4f6f8;
+  --text-2: #a9b2bd;
+  --text-3: #828c98;
+  --grid: #232a32;
+  --nav-bg: rgba(9, 11, 14, 0.78);
+  --c-tasks: #3592f4;
+  --c-fitness: #ec5e25;
+  --c-nutrition: #12a87f;
   --c-goals: #c98500;
-  --c-habits: #d55181;
-  --c-health: #9085e9;
-  --accent: #3987e5;
-  --accent-ink: #86b6ef;
-  --good-ink: #2fc22f;
-  --warn-ink: #fab219;
-  --critical-ink: #f07a7a;
+  --c-habits: #ec4f9b;
+  --c-health: #9077f2;
+  --accent: #3592f4;
+  --accent-ink: #8cc2ff;
+  --good: #2fd16a;
+  --good-ink: #5ee08e;
+  --warn: #f5b324;
+  --warn-ink: #f7c75a;
+  --serious: #f2804e;
+  --critical: #f0505e;
+  --critical-ink: #ff8a94;
   --demo: #e07cc0;
   --shadow-1: none;
-  --shadow-2: 0 18px 40px -24px rgba(0, 0, 0, 0.9);
-  --highlight: inset 0 1px 0 rgba(255, 255, 255, 0.045), inset 0 0 0 1px var(--border);
+  --shadow-2: 0 24px 48px -28px rgba(0, 0, 0, 0.95);
+  --highlight: inset 0 1px 0 rgba(255, 255, 255, 0.05), inset 0 0 0 1px var(--border);
+  --sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.028) 0%, rgba(255, 255, 255, 0) 42%);
+  --canvas-glow: radial-gradient(1000px 480px at 10% -10%, rgba(53, 146, 244, 0.13), transparent 70%), radial-gradient(700px 380px at 95% 0%, rgba(18, 168, 127, 0.07), transparent 70%);
   --glow: 1;
 }

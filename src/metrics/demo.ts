@@ -70,7 +70,7 @@ export function demoPayload(now: Date, tz: string): DashboardPayload {
       owner: r() < 0.5 ? 'Kevin' : 'Agent',
       list: r() < 0.6 ? 'Kevin' : 'Agent help',
       deferred: false,
-      top3: !done && i < 3 ? i + 1 : null,
+      top3: i < 3 ? i + 1 : null,
       nextAction: r() < 0.7 ? 'Demo next step' : null,
       waitingOnKevin: status.startsWith('Waiting'),
       blocked: status === 'Blocked',

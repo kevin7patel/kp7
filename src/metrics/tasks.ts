@@ -235,6 +235,26 @@ export function taskMetrics(ctx: MetricContext): Record<string, MetricValue> {
     ? metric(ctx, { id: 'tasks.blocked', label: 'Blockers', value: open.filter((t) => t.blocked).length, unit: 'items', period: 'now', source: sourceLabel(ctx, db, ['status', 'blocked']), calculation: 'Open tasks with a Blocked status or checkbox.' })
     : missing(ctx, { id: 'tasks.blocked', label: 'Blockers', unit: 'items', period: 'now', source: sourceLabel(ctx, db), calculation: 'Blocked open tasks.', note: statusOk ? 'Notion has no Blocked status or checkbox, so blockers are unknown (not zero).' : noStatus });
 
+  // Top 3 progress: the explicit denominator is the picks currently set in Notion (done ones included).
+  const picks = ctx.e.tasks.filter((t) => t.top3 != null && !t.deferred);
+  const picksDone = picks.filter((t) => t.statusGroup === 'done').length;
+  out['tasks.top3'] =
+    statusOk && ctx.taskFields.top3 === 'notion'
+      ? metric(ctx, {
+          id: 'tasks.top3',
+          label: 'Top 3',
+          value: picksDone,
+          display: `${picksDone}/${picks.length}`,
+          ratio: picks.length ? picksDone / picks.length : null,
+          unit: 'tasks',
+          period: 'now',
+          source: sourceLabel(ctx, db, ['top3', 'status', 'done']),
+          calculation: 'Top 3 picks marked done ÷ Top 3 picks currently set in Notion (current state, not a dated history).',
+          quality: 'real',
+          note: picks.length ? `${picksDone} of ${picks.length} pick${picks.length === 1 ? '' : 's'} done` : 'No Top 3 picked in Notion right now.',
+        })
+      : missing(ctx, { id: 'tasks.top3', label: 'Top 3', unit: 'tasks', period: 'now', source: sourceLabel(ctx, db), calculation: 'Top 3 picks done ÷ picks set.', note: statusOk ? 'No Top 3 property readable.' : noStatus });
+
   out['tasks.inProgress'] = statusOk
     ? metric(ctx, { id: 'tasks.inProgress', label: 'Working on', value: open.filter((t) => t.statusGroup === 'in_progress').length, unit: 'tasks', period: 'now', source: sourceLabel(ctx, db, ['status']), calculation: 'Tasks in an "In progress" status group.' })
     : missing(ctx, { id: 'tasks.inProgress', label: 'Working on', unit: 'tasks', period: 'now', source: sourceLabel(ctx, db), calculation: 'Tasks in progress.', note: noStatus });
