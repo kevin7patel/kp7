@@ -15,11 +15,16 @@ jobs:
   pages:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # Every deploy publishes the latest gh-pages tree, so a newer one safely replaces an older
+    # deploy that is still running or stuck waiting on the github-pages environment.
+    concurrency:
+      group: pages-deploy
+      cancel-in-progress: true
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: gh-pages
           path: .pages-site

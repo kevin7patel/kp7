@@ -13,17 +13,17 @@ permissions:
   pages: write
   id-token: write
 
-concurrency:
-  group: gh-pages
-  cancel-in-progress: false
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # Same branch queue as the sync job; job-level so a waiting Pages deploy never blocks it.
+    concurrency:
+      group: gh-pages-branch
+      cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
