@@ -46,8 +46,8 @@ describe('Notion API adapter → pipeline (verified Tasks/Projects schema, inven
     expect(t['Approve quote']!.top3).toBe(1);
     expect(t['Morning thing']!.nextAction).toBe('Call the vendor');
     expect(t['Someday item']!.deferred).toBe(true);
-    expect(t['Overdue thing']!.area).toBe('tru');
-    expect(t['Approve quote']!.area).toBe('staybridge');
+    expect(t['Overdue thing']!.area).toBe('Hotel A'); // explicit Notion value kept verbatim
+    expect(t['Approve quote']!.area).toBe('Hotel B');
     expect(t['Afternoon call']!.area).toBe('personal');
     expect(t['Morning thing']!.area).toBe('unclassified'); // empty Area is not personal
     expect(t['Sub task']!.parentTitle).toBe('Morning thing');
@@ -214,7 +214,7 @@ describe('MCP snapshot adapter', () => {
             schema: { Name: { type: 'title' }, Done: { type: 'checkbox' }, Progress: { type: 'select', options: ['Inbox', 'To Do', 'In Progress', 'Waiting'] }, Priority: { type: 'select', options: ['P1 · High', 'P2 · Normal'] }, 'Top 3': { type: 'select' }, 'Due date': { type: 'date' }, Area: { type: 'select' }, List: { type: 'select' }, 'Next action': { type: 'rich_text' } },
             rows: [
               { id: 'r1', url: null, lastEditedAt: null, values: { Name: 'Alpha', Done: false, Progress: 'Waiting', Priority: 'P1 · High', 'Top 3': '2', Area: 'Personal', List: 'Kevin', 'Next action': 'Check [Example.com](https://example.com) first' } },
-              { id: 'r2', url: null, lastEditedAt: null, values: { Name: 'Beta', Done: true, Progress: 'To Do', Area: 'Tru Hotel', List: 'Tru', 'Due date': '2026-10-01' } },
+              { id: 'r2', url: null, lastEditedAt: null, values: { Name: 'Beta', Done: true, Progress: 'To Do', Area: 'Hotel A', List: 'Hotel A list', 'Due date': '2026-10-01' } },
             ],
           },
         ],

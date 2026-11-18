@@ -42,17 +42,23 @@ export const dashboardConfig = {
    */
   areas: [
     { id: 'legal', label: 'Legal', group: 'personal', match: /\bcourt\b|legal|attorney|lawyer|city hall/i },
-    { id: 'staybridge', label: 'Staybridge', group: 'hotels', match: /staybridge/i },
-    { id: 'tru', label: 'Tru', group: 'hotels', match: /\btru\b|room \d{3}|fire panel|dumpster|sysco/i },
     { id: 'travel', label: 'Travel', group: 'personal', match: /travel|packing|trip\b|flights?\b|itinerary|passport|rental car/i },
     { id: 'health', label: 'Health', group: 'personal', match: /doctor|dentist|medicine|pharmacy|\bgym\b|fitness|workout|nutrition/i },
     { id: 'finance', label: 'Finance', group: 'personal', match: /cards?\b|checks\b|billing|\bbill\b|refund|dispute|insur|subscription|bank|\btax/i },
-    { id: 'hotel', label: 'Hotel ops', group: 'hotels', match: /hilton|hotel|\bstr\b|servsafe|lightstay|guest|chargeback|rfp|dbpr|merchant|sales lead|\bpool\b|breakfast|uniform|roofing|time-?clock/i },
+    { id: 'hotel', label: 'Hotel ops', group: 'hotels', match: /hotel|suites|room \d{3}|fire panel|dumpster|\bstr\b|servsafe|lightstay|guest|chargeback|rfp|dbpr|merchant|sales lead|\bpool\b|breakfast|uniform|roofing|time-?clock/i },
     // Explicit Notion value "Personal" maps here; keyword rules never default to it.
     { id: 'personal', label: 'Personal', group: 'personal', match: /^personal$/i },
     // No signal → unclassified (not personal). Shown under "All" only.
     { id: 'unclassified', label: 'Unclassified', group: 'unclassified', match: /[\s\S]*/ },
   ] satisfies AreaRule[],
+
+  /**
+   * An Area value set explicitly in Notion that matches no rule above keeps its Notion name as the
+   * label (it only ever appears on Kevin's device, after decryption) and lands in this group.
+   * The Tasks/Projects Area select holds Personal plus one option per hotel, so unmatched explicit
+   * values are hotels. Hotel names stay out of this public repository on purpose.
+   */
+  explicitAreaGroup: 'hotels' as 'hotels' | 'personal' | 'unclassified',
 
   /**
    * Personal targets. Deliberately empty: targets must come from Kevin or Notion,

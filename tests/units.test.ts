@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { classifyArea } from '../src/shared/areas';
+import { areaFromNotion, areaGroup, areaLabel, classifyArea } from '../src/shared/areas';
 import { DecryptError, decryptJson, encryptJson, generateKey, hmacHex, isPlausibleKey } from '../src/shared/crypto';
 import { addDays, dayKey, daysBetween, hourInTz, relativeTime, startOfWeek } from '../src/shared/dates';
 import { readDate, readNumber, readText, resolveField, resolveFields } from '../src/pipeline/sources/notionProps';
@@ -76,12 +76,20 @@ describe('Notion property readers', () => {
 
 describe('areas', () => {
   it('classifies by keyword with first-match-wins', () => {
-    expect(classifyArea('Staybridge pool permit renewal')).toBe('staybridge');
-    expect(classifyArea('Tru lobby lamp')).toBe('tru');
+    expect(classifyArea('Hotel pool permit renewal')).toBe('hotel');
+    expect(classifyArea('Replace lamp in room 214')).toBe('hotel');
     expect(classifyArea('Finish packing list')).toBe('travel');
     expect(classifyArea('Buy new socks')).toBe('unclassified'); // no signal → unclassified, never assumed personal
-    expect(classifyArea('Update hotel signage', 'Tru: exterior refresh')).toBe('hotel');
-    expect(classifyArea('Order replacement part', 'Staybridge: laundry room')).toBe('staybridge');
+    expect(classifyArea('Update exterior signage', 'Hotel: exterior refresh')).toBe('hotel');
+    expect(classifyArea('Order replacement part', 'Laundry room (suites)')).toBe('hotel');
+  });
+
+  it('keeps explicit Notion area values verbatim and groups them as hotels', () => {
+    expect(areaFromNotion('Personal')).toBe('personal');
+    expect(areaFromNotion('Hotel A')).toBe('Hotel A');
+    expect(areaLabel('Hotel A')).toBe('Hotel A');
+    expect(areaGroup('Hotel A')).toBe('hotels');
+    expect(areaGroup('unclassified')).toBe('unclassified');
   });
 });
 

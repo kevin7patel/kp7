@@ -80,7 +80,7 @@ Status colours (critical/warning/serious/good) are reserved for state and always
 | Project details | `projectList` / `projectMetrics` in `src/metrics/goals.ts`; row is `ProjectRow` in `src/app/components/ui.tsx`. |
 | What counts as active / test / deferred | `notionConfig.taskScope` (`deferredLists`, `excludeSourceValues`). |
 | Waiting / blocked rules | `notionConfig.statusRules` / `waitingOnKevin`. |
-| Area classification | Best: an **Area** select in Notion (used verbatim). Fallback: keyword rules in `dashboardConfig.areas`. |
+| Area classification | Explicit Notion **Area** values are kept verbatim as label and grouped by `dashboardConfig.explicitAreaGroup` (hotels); hotel names never enter the repo. Keyword fallback rules: `dashboardConfig.areas`. |
 | Move / remove / resize cards | `src/app/views/*` are flat card lists on a 12-column grid (`span-3` … `span-12`). Swap `StatTile` for a hero ring/number to enlarge. |
 | Visualization | `src/app/components/charts.tsx` (Ring, Sparkline, Columns, Heatmap, DotStrip, Meter, HBars). |
 | Mobile layout | `@media (max-width: 760px)` blocks in `src/app/styles/app.css`; `m-half`, `m-first`, `desktop-only` per card. |

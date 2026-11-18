@@ -48,8 +48,8 @@ export function createNotionMock(o: MockOptions) {
     'Top 3': { type: 'select', select: opts('1', '2', '3') },
     'Next action': { type: 'rich_text' },
     'Due date': { type: 'date' },
-    Area: { type: 'select', select: opts('Personal', 'Tru Hotel', 'Staybridge Hotel') },
-    List: { type: 'select', select: opts('Kevin', 'Agent help', 'Tru', 'Staybridge', 'Project', 'Later') },
+    Area: { type: 'select', select: opts('Personal', 'Hotel A', 'Hotel B') },
+    List: { type: 'select', select: opts('Kevin', 'Agent help', 'Hotel A list', 'Hotel B list', 'Project', 'Later') },
     Source: { type: 'select', select: opts('Manual', 'Uploaded file', 'Conversation', 'Email', 'Test') },
     Owner: { type: 'people' },
     Project: { type: 'relation' },
@@ -94,10 +94,10 @@ export function createNotionMock(o: MockOptions) {
     );
 
   const taskPages = [
-    task('t1', 'Overdue thing', { progress: 'To Do', due: o.yesterday, priority: 'P1 · High', area: 'Tru Hotel', list: 'Tru', project: ['p1'] }),
+    task('t1', 'Overdue thing', { progress: 'To Do', due: o.yesterday, priority: 'P1 · High', area: 'Hotel A', list: 'Hotel A list', project: ['p1'] }),
     task('t2', 'Morning thing', { progress: 'In Progress', due: o.today, priority: 'P3 · Low', list: 'Kevin', next: 'Call the vendor' }),
     task('t3', 'Afternoon call', { progress: 'To Do', due: `${o.today}T19:30:00.000Z`, area: 'Personal', list: 'Kevin' }),
-    task('t4', 'Approve quote', { progress: 'Waiting', due: o.tomorrow, area: 'Staybridge Hotel', list: 'Kevin', top3: '1', needsKevin: true }, '2026-09-28T15:00:00.000Z'),
+    task('t4', 'Approve quote', { progress: 'Waiting', due: o.tomorrow, area: 'Hotel B', list: 'Kevin', top3: '1', needsKevin: true }, '2026-09-28T15:00:00.000Z'),
     task('t5', 'Someday item', { progress: 'To Do', area: 'Personal', list: 'Later' }),
     task('t6', 'Shipped item', { progress: 'In Progress', done: true, area: 'Personal', list: 'Kevin', project: ['p1'], completed: o.today }),
     task('t7', 'Sub task', { progress: 'To Do', done: true, list: 'Kevin', parent: ['t2'], completed: o.yesterday }),
@@ -107,14 +107,14 @@ export function createNotionMock(o: MockOptions) {
   const projectSchema: Json = {
     Name: { type: 'title' },
     Outcome: { type: 'rich_text' },
-    Area: { type: 'select', select: opts('Personal', 'Tru Hotel') },
+    Area: { type: 'select', select: opts('Personal', 'Hotel A') },
     Owner: { type: 'people' },
     Status: { type: 'select', select: opts('Needs Review', 'To Do', 'In Progress', 'Waiting', 'Done') },
     'Target date': { type: 'date' },
     'Last updated': { type: 'last_edited_time' },
   };
   const projectPages = [
-    page('p1', { Name: title('Lobby refresh'), Outcome: text('New lighting and signage installed.'), Area: select('Tru Hotel'), Status: select('In Progress'), 'Target date': date(o.tomorrow) }),
+    page('p1', { Name: title('Lobby refresh'), Outcome: text('New lighting and signage installed.'), Area: select('Hotel A'), Status: select('In Progress'), 'Target date': date(o.tomorrow) }),
     page('p2', { Name: title('Weekly routine'), Outcome: text('A repeatable weekly plan.'), Area: select('Personal'), Status: select('Needs Review'), 'Target date': date(null) }),
   ];
 

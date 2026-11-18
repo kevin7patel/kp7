@@ -11,19 +11,18 @@ export function classifyArea(title: string, parentTitle?: string | null): string
   return viaParent?.id ?? 'unclassified';
 }
 
-/** Map a Notion area value (e.g. "Tru by Hilton") onto a configured area, or keep it verbatim. */
+/** Map an explicit Notion area value onto a configured area, or keep it verbatim (label = Notion name). */
 export function areaFromNotion(value: string): string {
   const v = value.trim();
-  const exact = rules.find((r) => r.label.toLowerCase() === v.toLowerCase());
-  if (exact) return exact.id;
-  const hit = rules.find((r) => r.id !== 'unclassified' && r.match.test(v));
-  return hit?.id ?? v;
+  const exact = rules.find((r) => r.label.toLowerCase() === v.toLowerCase() || r.id === v.toLowerCase());
+  return exact?.id ?? v; // explicit values are authoritative: no keyword guessing
 }
 
 export function areaLabel(id: string): string {
   return rules.find((r) => r.id === id)?.label ?? id;
 }
 
+/** Group for an area id. Verbatim Notion values (no matching rule) use `explicitAreaGroup`. */
 export function areaGroup(id: string): 'hotels' | 'personal' | 'unclassified' {
-  return rules.find((r) => r.id === id)?.group ?? 'unclassified';
+  return rules.find((r) => r.id === id)?.group ?? dashboardConfig.explicitAreaGroup;
 }
