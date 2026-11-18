@@ -42,10 +42,10 @@ export function Progress({ model }: { model: DashboardModel }) {
         <Card className="span-4" title="Weekly completion" right={<ProvenanceChip m={rate} />}>
           <div style={{ display: 'grid', justifyItems: 'center', gap: 10 }}>
             <Ring ratio={rate.ratio ?? null} size={132} stroke={11} color={DOMAIN_COLOR.tasks} label={`Weekly completion ${rate.value ?? 'unknown'}%`}>
-              <div style={{ fontWeight: 680, fontSize: 30 }}>{rate.value != null ? `${rate.value}%` : '—'}</div>
+              <div style={{ fontWeight: 680, fontSize: '1.875rem' }}>{rate.value != null ? `${rate.value}%` : '—'}</div>
               <div className="tag">7 days</div>
             </Ring>
-            <div style={{ color: 'var(--text-2)', fontSize: 13, textAlign: 'center' }}>{rate.quality === 'missing' ? rate.note : rate.calculation}</div>
+            <div style={{ color: 'var(--text-2)', fontSize: '0.8125rem', textAlign: 'center' }}>{rate.quality === 'missing' ? rate.note : rate.calculation}</div>
           </div>
         </Card>
       </div>
@@ -63,10 +63,10 @@ export function Progress({ model }: { model: DashboardModel }) {
               ) : (
                 <div style={{ display: 'flex', gap: 18, alignItems: 'center' }}>
                   <Ring ratio={cm.ratio ?? null} color={DOMAIN_COLOR.habits} label={`${c.label} consistency`}>
-                    <div style={{ fontWeight: 660, fontSize: 20 }}>{cm.ratio != null ? `${Math.round(cm.ratio * 100)}%` : '—'}</div>
+                    <div style={{ fontWeight: 660, fontSize: '1.25rem' }}>{cm.ratio != null ? `${Math.round(cm.ratio * 100)}%` : '—'}</div>
                   </Ring>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 650, fontSize: 18 }}>
+                    <div style={{ fontWeight: 650, fontSize: '1.125rem' }}>
                       {cm.display} {cm.display === 'Done' && <span className="badge-reward"><Icon name="check" size={12} /> today</span>}
                     </div>
                     <div className="tag" style={{ marginBottom: 8 }}>{cm.note}</div>

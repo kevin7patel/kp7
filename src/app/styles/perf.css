@@ -62,14 +62,14 @@ body {
 }
 .card-head h2,
 .card-head h3 {
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 760;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-2);
 }
 .card-head .hint {
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 .card-head .swatch {
   width: 8px;
@@ -78,7 +78,7 @@ body {
   box-shadow: 0 0 calc(var(--glow) * 8px) currentColor;
 }
 .section-title h2 {
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 760;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -91,7 +91,7 @@ body {
   letter-spacing: -0.035em;
 }
 .hero p {
-  font-size: 14.5px;
+  font-size: 0.9062rem;
 }
 
 /* ---------- Stat tiles ---------- */
@@ -108,7 +108,7 @@ body {
   font-variant-numeric: tabular-nums;
 }
 .stat.compact .value {
-  font-size: 32px;
+  font-size: 2rem;
 }
 .stat .accent-bar {
   width: 36px;
@@ -157,7 +157,7 @@ body {
   text-transform: uppercase;
 }
 .bucket h4 .count {
-  font-size: 15px;
+  font-size: 0.9375rem;
   font-weight: 800;
 }
 
@@ -276,7 +276,7 @@ body {
   font-weight: 600;
 }
 .hstat .hs-foot {
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--text-3);
   white-space: nowrap;
   overflow: hidden;
@@ -302,7 +302,7 @@ body {
 /* ---------- Phone ---------- */
 @media (max-width: 760px) {
   .hero h2 {
-    font-size: 27px;
+    font-size: 1.6875rem;
   }
   .pulse {
     grid-template-columns: 1fr;
@@ -314,7 +314,7 @@ body {
     justify-self: center;
   }
   .coach {
-    font-size: 18px;
+    font-size: 1.125rem;
     text-align: center;
   }
   .pulse-kicker {
@@ -324,10 +324,10 @@ body {
     gap: 10px;
   }
   .hstat .value {
-    font-size: 32px;
+    font-size: 2rem;
   }
   .stat .value {
-    font-size: 36px;
+    font-size: 2.25rem;
   }
   .tabbar a[aria-current='page'] {
     color: var(--accent-ink);
@@ -377,7 +377,7 @@ body {
     height: 118px !important;
   }
   .pulse-ring .ring-value {
-    font-size: 32px;
+    font-size: 2rem;
   }
   .pulse-ring .ring-label {
     font-size: 9px;
@@ -394,7 +394,7 @@ body {
     grid-row: 2;
     align-self: start;
     text-align: left;
-    font-size: 17px;
+    font-size: 1.0625rem;
     -webkit-line-clamp: 3;
   }
   .pulse-stats {

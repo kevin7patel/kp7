@@ -93,12 +93,12 @@ export function Settings({ theme, dash }: { theme: ReturnType<typeof useTheme>; 
                   </button>
                 )}
               </div>
-              {keyError && <div style={{ color: 'var(--critical-ink)', fontSize: 13, marginTop: 6 }}>{keyError}</div>}
+              {keyError && <div style={{ color: 'var(--critical-ink)', fontSize: '0.8125rem', marginTop: 6 }}>{keyError}</div>}
             </div>
           </Card>
 
           <Card title="On-demand Notion sync" icon="sync">
-            <div className="s-desc" style={{ color: 'var(--text-2)', fontSize: 13.5, marginBottom: 10 }}>
+            <div className="s-desc" style={{ color: 'var(--text-2)', fontSize: '0.8438rem', marginBottom: 10 }}>
               Notion is reconciled automatically every 30 minutes. To make <strong>Sync now</strong> trigger an immediate run, store a fine-grained GitHub token limited to the <span className="code">{repo}</span> repository with <em>Actions: read &amp; write</em>. It stays on this device.
             </div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>

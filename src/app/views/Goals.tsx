@@ -124,7 +124,7 @@ export function Goals({ model }: { model: DashboardModel }) {
               <Card key={g.id} className="span-6">
                 <div className="goal">
                   <Ring ratio={g.progress} size={84} stroke={8} color={DOMAIN_COLOR.goals} label={`${g.title} ${g.progress != null ? Math.round(g.progress * 100) : 'unknown'}%`}>
-                    <div style={{ fontWeight: 680, fontSize: 18 }}>{g.progress != null ? `${Math.round(g.progress * 100)}%` : '—'}</div>
+                    <div style={{ fontWeight: 680, fontSize: '1.125rem' }}>{g.progress != null ? `${Math.round(g.progress * 100)}%` : '—'}</div>
                   </Ring>
                   <div className="g-body">
                     <div className="g-title">

@@ -60,7 +60,7 @@ export function Sources({ payload, state, view }: { payload: DashboardPayload; s
             </dd>
           </dl>
           {s.notes.length > 0 && (
-            <ul style={{ margin: '14px 0 0', paddingLeft: 18, color: 'var(--text-2)', fontSize: 13, display: 'grid', gap: 4 }}>
+            <ul style={{ margin: '14px 0 0', paddingLeft: 18, color: 'var(--text-2)', fontSize: '0.8125rem', display: 'grid', gap: 4 }}>
               {s.notes.map((n) => (
                 <li key={n}>{n}</li>
               ))}
@@ -91,7 +91,7 @@ export function Sources({ payload, state, view }: { payload: DashboardPayload; s
             ))}
           </div>
           {payload.sync.warnings.length > 0 && (
-            <ul style={{ margin: '12px 0 0', paddingLeft: 18, color: 'var(--text-2)', fontSize: 13 }}>
+            <ul style={{ margin: '12px 0 0', paddingLeft: 18, color: 'var(--text-2)', fontSize: '0.8125rem' }}>
               {payload.sync.warnings.map((w) => (
                 <li key={w}>{w}</li>
               ))}

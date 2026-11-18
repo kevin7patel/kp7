@@ -83,5 +83,6 @@ Status colours (critical/warning/serious/good) are reserved for state and always
 | Area classification | Explicit Notion **Area** values are kept verbatim as label and grouped by `dashboardConfig.explicitAreaGroup` (hotels); hotel names never enter the repo. Keyword fallback rules: `dashboardConfig.areas`. |
 | Move / remove / resize cards | `src/app/views/*` are flat card lists on a 12-column grid (`span-3` … `span-12`). Swap `StatTile` for a hero ring/number to enlarge. |
 | Visualization | `src/app/components/charts.tsx` (Ring, Sparkline, Columns, Heatmap, DotStrip, Meter, HBars). |
+| Interface too big / too small | `--type-root` in `src/app/styles/tokens.css` (13px today; 16px is browser default). All sizes ≥ 12px are rem and follow it; labels under 12px stay fixed. |
 | Mobile layout | `@media (max-width: 760px)` blocks in `src/app/styles/app.css`; `m-half`, `m-first`, `desktop-only` per card. |
 | Refresh the snapshot without a token | In a Claude session with the Notion connector, re-capture `.data/raw/notion-mcp-snapshot.json` (gitignored), then `npm run sync -- --source=snapshot`. |

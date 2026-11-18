@@ -24,7 +24,7 @@ const viewports = [
   { name: 'narrow-375', width: 375, height: 667, mobile: true },
 ].filter((v) => !only || only.includes(v.name));
 
-const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || '/opt/pw-browsers/chromium' });
 const problems = [];
 for (const vp of viewports) {
   for (const theme of themes) {

@@ -70,7 +70,7 @@ function Fitness({ model, facts }: { model: DashboardModel; facts: Fact[] }) {
           <div className="grid">
             {model.exerciseTrends.map((t) => (
               <Card key={t.exercise} className="span-4" title={t.exercise} hint="top weight per session" color={DOMAIN_COLOR.fitness}>
-                <div style={{ fontWeight: 660, fontSize: 26, marginBottom: 6 }}>
+                <div style={{ fontWeight: 660, fontSize: '1.625rem', marginBottom: 6 }}>
                   {fmtNum(t.series[t.series.length - 1]!.value ?? 0)} <span className="tag">lb</span>
                 </div>
                 <Sparkline series={t.series} color={DOMAIN_COLOR.fitness} label={`${t.exercise} trend`} format={(v) => `${v} lb`} />
@@ -108,7 +108,7 @@ function MacroRing({ m, color }: { m: MetricValue; color: string }) {
     <Card className="span-4 m-half" title={m.label} right={<ProvenanceChip m={m} />}>
       <div style={{ display: 'grid', justifyItems: 'center', gap: 8 }}>
         <Ring ratio={m.ratio ?? null} size={118} stroke={10} color={color} label={`${m.label} ${m.value ?? 'unknown'}`}>
-          <div style={{ fontWeight: 680, fontSize: 22 }}>{missing ? '—' : (m.display ?? fmtNum(m.value ?? 0))}</div>
+          <div style={{ fontWeight: 680, fontSize: '1.375rem' }}>{missing ? '—' : (m.display ?? fmtNum(m.value ?? 0))}</div>
           {!missing && m.value != null && <div className="tag">{m.target ? `of ${fmtNum(m.target)} ${m.unit}` : m.unit}</div>}
         </Ring>
         <div className="tag" style={{ textAlign: 'center', whiteSpace: 'normal', maxWidth: '100%' }}>
@@ -181,7 +181,7 @@ function Health({ model, facts }: { model: DashboardModel; facts: Fact[] }) {
         {model.health.map((h) => (
           <Card key={h.id} className="span-4" title={h.label} color={DOMAIN_COLOR.health} right={<ProvenanceChip m={h} />}>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 6 }}>
-              <span style={{ fontWeight: 680, fontSize: 30, letterSpacing: '-0.02em' }}>{fmtNum(h.value ?? 0)}</span>
+              <span style={{ fontWeight: 680, fontSize: '1.875rem', letterSpacing: '-0.02em' }}>{fmtNum(h.value ?? 0)}</span>
               <span className="tag">{h.unit}</span>
               {h.delta && (
                 <span className="delta neutral" style={{ marginLeft: 'auto' }}>

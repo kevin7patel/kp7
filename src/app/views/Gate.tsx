@@ -23,7 +23,7 @@ export function Gate({ state, dash }: { state: DashState; dash: ReturnType<typeo
             <Icon name="lock" />
             <h3>{state.status === 'badkey' ? 'That key can’t unlock this data' : 'Unlock your dashboard'}</h3>
           </div>
-          <p style={{ color: 'var(--text-2)', fontSize: 14, marginTop: 0 }}>
+          <p style={{ color: 'var(--text-2)', fontSize: '0.875rem', marginTop: 0 }}>
             Your Notion data is published encrypted because the repository is public. Open your private unlock link, or paste the dashboard key. It is stored only on this device.
           </p>
           <form
@@ -39,7 +39,7 @@ export function Gate({ state, dash }: { state: DashState; dash: ReturnType<typeo
             style={{ display: 'grid', gap: 10 }}
           >
             <input className="input mono" type="password" placeholder="Dashboard key" value={key} onChange={(e) => setKey(e.target.value)} autoComplete="off" spellCheck={false} aria-label="Dashboard key" />
-            {err && <div style={{ color: 'var(--critical-ink)', fontSize: 13 }}>{err}</div>}
+            {err && <div style={{ color: 'var(--critical-ink)', fontSize: '0.8125rem' }}>{err}</div>}
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <button className="btn primary" type="submit" disabled={!key.trim()}>
                 Unlock
@@ -61,7 +61,7 @@ export function Gate({ state, dash }: { state: DashState; dash: ReturnType<typeo
           <Icon name="sources" />
           <h3>{state.offline ? 'Offline — no cached data yet' : 'No data published yet'}</h3>
         </div>
-        <p style={{ color: 'var(--text-2)', fontSize: 14, marginTop: 0 }}>
+        <p style={{ color: 'var(--text-2)', fontSize: '0.875rem', marginTop: 0 }}>
           {state.offline
             ? 'Reconnect to load your dashboard. It will refresh automatically when you are back online.'
             : 'The sync pipeline has not published a payload to this site yet. Once the Notion token and dashboard key are configured, the first sync runs within 30 minutes (or immediately via Sync now).'}

@@ -5,14 +5,14 @@
 .setup-list { list-style: none; counter-reset: setup; padding: 0; margin: 18px 0 0; }
 .setup-list > li { counter-increment: setup; border-top: 1px solid var(--border); padding: 18px 0 0 40px; margin-top: 18px; position: relative; }
 .setup-list > li::before { content: counter(setup); position: absolute; left: 0; top: 18px; width: 28px; height: 28px; border-radius: 50%; background: var(--bg-tint); display: grid; place-items: center; font-weight: 650; }
-.setup-list h4 { font-size: 16px; margin: 2px 0 8px; }
+.setup-list h4 { font-size: 1rem; margin: 2px 0 8px; }
 .setup-list p { color: var(--text-2); margin: 10px 0; max-width: 78ch; }
 .setup-list .tag { white-space: normal; }
 .setup-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .setup-key { margin-top: 14px; max-width: 560px; }
 .setup-key .input { flex: 1 1 200px; min-width: 0; }
 .setup-notice:empty { display: none; }
-.setup-notice { font-size: 13px; }
+.setup-notice { font-size: 0.8125rem; }
 
 *,
 *::before,
@@ -20,6 +20,7 @@
   box-sizing: border-box;
 }
 html {
+  font-size: var(--type-root);
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }
@@ -27,7 +28,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font: 15px/1.45 var(--font);
+  font: var(--type-base)/1.45 var(--font);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
@@ -103,7 +104,7 @@ button {
   display: block;
   font-weight: 500;
   color: var(--text-3);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 .nav-item {
   display: flex;
@@ -168,7 +169,7 @@ button {
 }
 .topbar .sub {
   color: var(--text-3);
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 .topbar .spacer {
   flex: 1;
@@ -239,13 +240,13 @@ button {
 .card-head h2,
 .card-head h3 {
   margin: 0;
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 620;
   letter-spacing: -0.005em;
 }
 .card-head .hint {
   color: var(--text-3);
-  font-size: 12.5px;
+  font-size: 0.7812rem;
 }
 .card-head .right {
   margin-left: auto;
@@ -279,7 +280,7 @@ button {
 }
 .section-title .hint {
   color: var(--text-3);
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 
 @keyframes rise {
@@ -313,7 +314,7 @@ button {
 .hero p {
   margin: 6px 0 0;
   color: var(--text-2);
-  font-size: 15px;
+  font-size: 0.9375rem;
 }
 .hero .summary strong {
   color: var(--text);
@@ -332,7 +333,7 @@ button {
   align-items: center;
   gap: 8px;
   color: var(--text-2);
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 560;
 }
 .stat .value {
@@ -341,7 +342,7 @@ button {
   margin-top: 4px;
 }
 .stat .value .unit {
-  font-size: 15px;
+  font-size: 0.9375rem;
   font-weight: 560;
   color: var(--text-3);
   letter-spacing: 0;
@@ -357,14 +358,14 @@ button {
   align-items: center;
   gap: 8px;
   color: var(--text-3);
-  font-size: 12.5px;
+  font-size: 0.7812rem;
   min-height: 18px;
 }
 .stat.compact {
   min-height: 0;
 }
 .stat.compact .value {
-  font-size: 30px;
+  font-size: 1.875rem;
 }
 .stat .accent-bar {
   position: absolute;
@@ -375,7 +376,7 @@ button {
   border-radius: 0 0 3px 3px;
 }
 .delta {
-  font-size: 12.5px;
+  font-size: 0.7812rem;
   font-weight: 600;
 }
 .delta.good {
@@ -428,7 +429,7 @@ button {
   height: 22px;
   padding: 0 8px;
   border-radius: 6px;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 560;
   background: var(--surface-2);
   color: var(--text-2);
@@ -460,7 +461,7 @@ button {
   border-radius: 12px;
   background: var(--surface);
   box-shadow: var(--highlight), 0 20px 50px -20px rgba(0, 0, 0, 0.45);
-  font-size: 12.5px;
+  font-size: 0.7812rem;
   color: var(--text-2);
   animation: rise 0.18s var(--ease) both;
   text-align: left;
@@ -484,7 +485,7 @@ button {
   font-weight: 650;
   color: var(--text);
   margin-bottom: 10px;
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 
 /* ---------- Buttons & controls ---------- */
@@ -499,7 +500,7 @@ button {
   border: 1px solid var(--border-strong);
   background: var(--surface);
   font-weight: 580;
-  font-size: 13.5px;
+  font-size: 0.8438rem;
   cursor: pointer;
   text-decoration: none;
   transition: background 0.15s, transform 0.1s;
@@ -546,7 +547,7 @@ button {
   border: 0;
   border-radius: 8px;
   background: transparent;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 580;
   color: var(--text-2);
   cursor: pointer;
@@ -557,7 +558,7 @@ button {
   min-height: 30px;
   padding: 0 12px;
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 580;
   color: var(--text-2);
   text-decoration: none;
@@ -580,7 +581,7 @@ button {
 }
 .input.mono {
   font-family: var(--mono);
-  font-size: 12.5px;
+  font-size: 0.7812rem;
 }
 
 /* ---------- Sync pill ---------- */
@@ -593,7 +594,7 @@ button {
   border-radius: 999px;
   background: var(--surface);
   box-shadow: var(--highlight);
-  font-size: 12.5px;
+  font-size: 0.7812rem;
   color: var(--text-2);
 }
 .sync .state {
@@ -619,7 +620,7 @@ button {
   min-height: 28px;
   padding: 0 10px;
   border-radius: 999px;
-  font-size: 12.5px;
+  font-size: 0.7812rem;
   font-weight: 600;
   cursor: pointer;
   display: inline-flex;
@@ -651,7 +652,7 @@ button {
   margin: 16px 28px 0;
   padding: 12px 14px;
   border-radius: 12px;
-  font-size: 13.5px;
+  font-size: 0.8438rem;
   background: var(--surface);
   box-shadow: var(--highlight);
   max-width: 1424px;
@@ -711,7 +712,7 @@ button {
   display: block;
   color: var(--text-3);
   font-weight: 450;
-  font-size: 12px;
+  font-size: 0.75rem;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -734,7 +735,7 @@ button {
   border-radius: 7px;
   display: grid;
   place-items: center;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 650;
   background: var(--surface-2);
   color: var(--text-2);
@@ -749,7 +750,7 @@ button {
 }
 .more {
   margin-top: 10px;
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 
 /* Day plan buckets */
@@ -769,7 +770,7 @@ button {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12.5px;
+  font-size: 0.7812rem;
   font-weight: 650;
   color: var(--text-2);
 }
@@ -780,12 +781,12 @@ button {
 }
 .bucket .empty-b {
   color: var(--text-3);
-  font-size: 12.5px;
+  font-size: 0.7812rem;
   padding: 6px 0;
 }
 .bucket .row {
   min-height: 38px;
-  font-size: 13.5px;
+  font-size: 0.8438rem;
 }
 .bucket.overdue {
   box-shadow: inset 3px 0 0 var(--critical);
@@ -803,7 +804,7 @@ button {
 }
 .empty .e-title {
   font-weight: 620;
-  font-size: 14px;
+  font-size: 0.875rem;
   display: flex;
   gap: 8px;
   align-items: center;
@@ -811,7 +812,7 @@ button {
 .empty p {
   margin: 0;
   color: var(--text-2);
-  font-size: 13.5px;
+  font-size: 0.8438rem;
   max-width: 62ch;
 }
 .empty blockquote {
@@ -819,7 +820,7 @@ button {
   padding: 8px 12px;
   border-left: 3px solid var(--border-strong);
   color: var(--text-2);
-  font-size: 13px;
+  font-size: 0.8125rem;
   background: var(--surface);
   border-radius: 0 8px 8px 0;
 }
@@ -828,7 +829,7 @@ button {
   margin-top: 4px;
   font-style: normal;
   color: var(--text-3);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 /* ---------- Charts ---------- */
@@ -859,7 +860,7 @@ button {
   border-radius: 8px;
   background: var(--text);
   color: var(--bg);
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 560;
   white-space: nowrap;
   box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.4);
@@ -953,7 +954,7 @@ button {
   grid-template-columns: minmax(80px, 140px) 1fr 36px;
   align-items: center;
   gap: 10px;
-  font-size: 13px;
+  font-size: 0.8125rem;
   min-height: 30px;
 }
 .hbar .track {
@@ -971,7 +972,7 @@ button {
 .table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 .table th {
   text-align: left;
@@ -1001,7 +1002,7 @@ button {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 620;
   white-space: nowrap;
 }
@@ -1021,7 +1022,7 @@ button {
   display: grid;
   grid-template-columns: max-content 1fr;
   gap: 8px 16px;
-  font-size: 13.5px;
+  font-size: 0.8438rem;
   margin: 0;
 }
 .kv dt {
@@ -1044,14 +1045,14 @@ button {
   padding: 0 10px;
   border-radius: 8px;
   background: var(--surface-2);
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 600;
 }
 .stage.ok { color: var(--good-ink); }
 .stage.fail { color: var(--critical-ink); }
 .stage-arrow {
   color: var(--text-3);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 /* Goal cards */
@@ -1070,7 +1071,7 @@ button {
 }
 .goal .g-meta {
   color: var(--text-3);
-  font-size: 12.5px;
+  font-size: 0.7812rem;
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
@@ -1179,12 +1180,12 @@ button {
 }
 .setting .s-desc {
   color: var(--text-3);
-  font-size: 13px;
+  font-size: 0.8125rem;
   margin-top: 2px;
 }
 .code {
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: 0.75rem;
   background: var(--surface-2);
   padding: 2px 6px;
   border-radius: 6px;
@@ -1195,7 +1196,7 @@ ol.steps {
   padding-left: 20px;
   display: grid;
   gap: 8px;
-  font-size: 13.5px;
+  font-size: 0.8438rem;
   color: var(--text-2);
 }
 ol.steps strong {
@@ -1254,7 +1255,7 @@ ol.steps strong {
 
 @media (max-width: 760px) {
   body {
-    font-size: 15px;
+    font-size: 0.9375rem;
   }
   .app {
     display: block;
@@ -1273,7 +1274,7 @@ ol.steps strong {
     gap: 10px;
   }
   .topbar h1 {
-    font-size: 17px;
+    font-size: 1.0625rem;
   }
   .view {
     padding: 14px 16px calc(96px + env(safe-area-inset-bottom));
@@ -1297,7 +1298,7 @@ ol.steps strong {
     grid-column: span 1;
   }
   .hero h2 {
-    font-size: 25px;
+    font-size: 1.5625rem;
   }
   .hero {
     margin-bottom: 14px;
@@ -1306,10 +1307,10 @@ ol.steps strong {
     min-height: 112px;
   }
   .stat .value {
-    font-size: 34px;
+    font-size: 2.125rem;
   }
   .m-half.stat .value {
-    font-size: 30px;
+    font-size: 1.875rem;
   }
   .card {
     padding: 15px 14px 14px;
@@ -1414,7 +1415,7 @@ ol.steps strong {
 
 /* ---------- Iteration 2 refinements ---------- */
 .stat .value.text {
-  font-size: 22px;
+  font-size: 1.375rem;
   line-height: 1.2;
   letter-spacing: -0.015em;
 }
@@ -1515,7 +1516,7 @@ ol.steps strong {
   cursor: pointer;
   padding: 10px 2px;
   color: var(--text-3);
-  font-size: 13px;
+  font-size: 0.8125rem;
   list-style-position: inside;
 }
 .done-group[open] > summary {
@@ -1523,7 +1524,7 @@ ol.steps strong {
 }
 .foot-note {
   margin: 10px 0 0;
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--text-3);
 }
 .timeline-list {

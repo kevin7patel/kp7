@@ -9,6 +9,10 @@
  * Status colors (good / warn / serious / critical) are reserved for state.
  */
 :root {
+  /* Type scale: one lever for the whole interface. Sizes ≥ 12px are in rem; 16px = browser default,
+     14px reads 12.5% smaller. Labels under 12px stay in px so they never get smaller. */
+  --type-root: 13px;
+  --type-base: 0.9375rem;
   color-scheme: light;
   --font: system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
   --font-display: system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;

@@ -17,7 +17,7 @@ const hoursAgo = (h) => new Date(Date.now() - h * 3600_000).toISOString();
 const withCaptured = (iso) => ({ ...live, source: { ...live.source, capturedAt: iso } });
 const runs = (conclusion, updated) => ({ workflow_runs: [{ id: 1, status: 'completed', conclusion, updated_at: updated, created_at: updated, html_url: 'https://github.com/kevin7patel/kp7/actions/runs/1', event: 'schedule' }] });
 
-const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || '/opt/pw-browsers/chromium' });
 const results = [];
 
 async function scenario(name, { plain, encrypted, gh, storage = {}, hash = '#/today', viewport = { width: 1280, height: 860 }, act, expect: checks }) {
