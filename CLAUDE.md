@@ -12,24 +12,24 @@ Read-only view of Notion (other agents update it). Never write to Notion.
 - Never commit Notion content (titles, names, health values, keys, tokens) anywhere: code, tests,
   fixtures, docs, screenshots, commits. Schema facts and non-secret IDs are fine.
 - Real data only in gitignored `.data/`; QA output in gitignored `.artifacts/`. Fixtures are invented.
-  Tokens stay in ignored env files / GitHub secrets, never in chat. Hosted data is AES-256-GCM ciphertext.
+  Tokens stay in ignored env files / GitHub secrets, never in chat.
 
 ## Data (details: `docs/notion-schema.md`)
 - Active task = not Done, List ∉ {Later, Project}, Source ≠ Test. Empty Area = "unclassified", not personal.
-- No completion-date property → no completion history, streaks or "done today" (never from Last updated).
-- "Waiting on you" needs an explicit needs-Kevin signal; else "Waiting".
-- Projects = V1 outcome layer; Goals Tracker rows are examples → excluded.
+- Needs Kevin, Completed date and Project target date are auto-detected when added in Notion.
+  Until then: "Waiting" (not "Waiting on you"), no completion history/streaks (never from Last updated).
+- Projects = outcome layer; Goals Tracker rows are template examples → excluded.
 - America/Chicago day buckets. Preserve date-only values and units.
 
 ## Map
 Notion mapping `config/notion.config.ts` · behaviour `config/dashboard.config.ts` ·
 pipeline `src/pipeline/` · metrics `src/metrics/` (pure, provenance on every value) ·
 UI `src/app/views/*` from `src/app/components/*`, tokens `src/app/styles/tokens.css`.
-Change→file table: `docs/iterating.md`. Architecture/setup: `docs/architecture.md`, `docs/setup.md`.
+Change→file table, layers, sync, privacy, design system: `docs/architecture.md`. Setup, commands: `README.md`.
 
 ## Workflow
-`git status`, read only what the change needs. Use skills `dashboard-ui`, `notion-integration`,
-`visual-qa` on demand. Smallest coherent edit; keep adapters, types, metrics, UI separate; add
-metric/adapter tests. Verify with `npm run verify`; for visible changes preview on :4173 and run
-`npm run screenshots` (+ `-- --demo`) and `npm run states`, then look at the images. Report what was
-verified; update docs when architecture, schema, commands or decisions change.
+`git status`, read only what the change needs. Smallest coherent edit; keep adapters, types, metrics,
+UI separate; add metric/adapter tests with invented fixtures. Verify with `npm run verify`; for visible
+changes build, `npx vite preview --port 4173`, run `npm run screenshots` (+ `-- --demo`) and
+`npm run states`, then look at the images in `.artifacts/` (desktop + phone, light + dark). Report what
+was verified; update the doc when architecture, schema, commands or decisions change.

@@ -14,7 +14,7 @@ const only = args.find((a) => a.startsWith('--viewports='))?.split('=')[1]?.spli
 const key = args.find((a) => a.startsWith('--key='))?.split('=')[1];
 mkdirSync(out, { recursive: true });
 
-// Primary QA sizes per the visual-qa skill: 1440×900 desktop and 390×844 phone, plus a narrow breakpoint.
+// Primary QA sizes: 1440×900 desktop and 390×844 phone, plus a narrow breakpoint.
 const viewports = [
   { name: 'desktop-1440', width: 1440, height: 900, mobile: false },
   { name: 'macbook-14', width: 1512, height: 982, mobile: false },

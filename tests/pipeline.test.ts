@@ -214,7 +214,7 @@ describe('MCP snapshot adapter', () => {
             schema: { Name: { type: 'title' }, Done: { type: 'checkbox' }, Progress: { type: 'select', options: ['Inbox', 'To Do', 'In Progress', 'Waiting'] }, Priority: { type: 'select', options: ['P1 · High', 'P2 · Normal'] }, 'Top 3': { type: 'select' }, 'Due date': { type: 'date' }, Area: { type: 'select' }, List: { type: 'select' }, 'Next action': { type: 'rich_text' } },
             rows: [
               { id: 'r1', url: null, lastEditedAt: null, values: { Name: 'Alpha', Done: false, Progress: 'Waiting', Priority: 'P1 · High', 'Top 3': '2', Area: 'Personal', List: 'Kevin', 'Next action': 'Check [Example.com](https://example.com) first' } },
-              { id: 'r2', url: null, lastEditedAt: null, values: { Name: 'Beta', Done: true, Progress: 'To Do', Area: 'Tru Fort Walton Beach', List: 'Tru', 'Due date': '2026-10-01' } },
+              { id: 'r2', url: null, lastEditedAt: null, values: { Name: 'Beta', Done: true, Progress: 'To Do', Area: 'Tru Hotel', List: 'Tru', 'Due date': '2026-10-01' } },
             ],
           },
         ],

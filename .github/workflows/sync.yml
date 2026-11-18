@@ -38,7 +38,7 @@ jobs:
           if [ -z "$NOTION_TOKEN" ] || [ -z "$DASHBOARD_KEY" ]; then
             echo "configured=false" >> "$GITHUB_OUTPUT"
             echo "### Notion sync not configured" >> "$GITHUB_STEP_SUMMARY"
-            echo "Add the NOTION_TOKEN and DASHBOARD_KEY repository secrets (see docs/setup.md). No sync ran." >> "$GITHUB_STEP_SUMMARY"
+            echo "Add the NOTION_TOKEN and DASHBOARD_KEY repository secrets (see the README). No sync ran." >> "$GITHUB_STEP_SUMMARY"
             echo "::error::Notion sync needs the NOTION_TOKEN and DASHBOARD_KEY repository secrets."
             exit 1
           else

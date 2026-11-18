@@ -21,32 +21,15 @@ Notion ──► Source adapter ──► VALIDATE ──► NORMALIZE ──►
 | Dashboard state | `src/app/data/useDashboard.ts` | Loads plain (local) or encrypted (hosted) payloads, refreshes on focus/interval/reconnect, "Sync now", freshness state. |
 | Views | `src/app/views/` | Today, Tasks, Progress, Body (Fitness/Nutrition/Health), Goals, Sources, Settings. Reusable components in `src/app/components/`. |
 
-## Relationship to the setup bundle
-The setup bundle recommended Next.js with server routes as a baseline for an empty repository.
-This repo was already implemented as a static PWA plus a GitHub Actions pipeline, because the
-brief requires iPhone and MacBook access, a 30-minute sync and no paid services, and there is no
-always-on server. The bundle's principles are kept: separate adapters, normalized types, pure
-metrics and UI; metric contracts with source, scope, unit, window and missing-data policy;
-required sources with last-good preservation; synthetic fixtures; nothing private in git.
+## Data integrity
+Task scope, Goals Tracker exclusion and the no-completion-date rule: `CLAUDE.md`, `docs/notion-schema.md`.
 
-## Scope and source rules
-- Required sources (Tasks, Projects) must load or the run fails; the last good payload stays
-  live and the failure reaches the UI as an error state. Optional sources fail independently.
-- Full pagination; rows are deduplicated by page ID; `Source = Test` rows are excluded and the
-  row-preservation invariant accounts for them.
-- Active tasks exclude Done and the deferred lists (Later, Project), which are counted separately.
-  An empty Area is "unclassified"; keyword heuristics apply only when no Area property exists.
-- No dated history is derived from `Last updated`: without a completion-date property, completion
-  metrics are `missing` with a reason.
-
-## Data integrity rules
 - **Quality on every metric**: `real` (direct Notion value), `derived` (calculated from Notion records),
   `demo` (synthetic), `missing` (with a reason). Shown as a chip; click/tap for source, calculation,
   period, unit and last-updated time.
 - Missing data renders as **“—” with a reason**, never as zero.
 - Demo data is generated on-device, is never written to a payload, and forces a striped banner + Demo chips.
-- Notion template sample rows (Goals Tracker) are detected and excluded from goals.
-- Health values are shown as recorded with neutral deltas. No scores, no medical interpretation.
+- Health values are shown as recorded with neutral deltas.
 
 ## Sync strategy
 | Concern | Mechanism |
@@ -61,19 +44,13 @@ required sources with last-good preservation; synthetic fixtures; nothing privat
 | Event-driven | Not available in the current environment: Notion webhooks need a public HTTPS receiver, and this setup has no server. The `notion-change` dispatch trigger is ready for a relay (e.g. a free Cloudflare Worker) if wanted later. |
 
 ## Privacy model (public repository)
-The bundle's rule is "do not deploy personal data publicly". The hosted copy is ciphertext only;
-plaintext exists solely in gitignored `.data/` and in the browser after the key unlocks it.
-Kevin can choose a stricter option instead (see the final report): local-only use, or a private
-repository (GitHub Pages on private repos needs a paid plan, so it requires his approval).
-
 - Personal data never enters git: `.data/` and `public/data/` are gitignored; CI asserts `dist/data` does not exist.
 - Published payload is AES-256-GCM encrypted with a 32-byte key held in a GitHub secret and in Kevin's browsers.
 - The key arrives via a URL fragment (`#k=`), which browsers never send to servers.
 - Workflow logs contain stage names and counts, never Notion content. Errors are reduced to codes.
 - The integration needs **Read content** only; the code issues only GET and query/search POSTs (asserted in tests).
 - Missing GitHub secrets fail configuration instead of producing a successful run that skipped the sync.
-- Settings guides setup with direct account/database links. Keys are generated on-device, masked by default,
-  and reused when present; the Notion token is entered only in GitHub.
+- Keys are generated on-device, masked by default and reused; the Notion token is entered only in GitHub.
 
 ## Freshness states (sync pill + banner)
 `live` · `snapshot` (Claude-captured, not live; structured or titles-only) · `stale` (no successful sync in 90 min) · `error`
@@ -90,3 +67,21 @@ Data hues per domain — tasks blue, fitness orange, nutrition aqua, goals amber
 health violet — validated with the dataviz palette checker against each mode's card surface:
 light `#ffffff` ALL PASS, dark `#12161b` ALL PASS. Text tokens meet WCAG AA (hint text ≥ 4.9:1).
 Status colours (critical/warning/serious/good) are reserved for state and always paired with an icon + label.
+
+## Where each change lives
+
+| Request | Change |
+|---|---|
+| Add a Notion property | `config/notion.config.ts` → `fields.<entity>`: add a logical field, or pin `{ types: ['number'], property: 'Exact Name' }`. Read it in `src/pipeline/normalize.ts`. |
+| Track a new database | Name it so `classifyByTitle` matches (Daily Log, Workouts, Nutrition, Body Metrics…) and it is discovered; or add it to `databases` with an `entity`. |
+| Another health metric | Nothing: every number column in a health/body database becomes a card. Names/units: `healthMetrics`. |
+| Protein / calorie / workout targets | `config/dashboard.config.ts` → `targets`. Rings switch to target-vs-actual. |
+| Goal calculation | `src/metrics/goals.ts` (Notion progress, else (current − start) ÷ (target − start)). |
+| Project details | `projectList` / `projectMetrics` in `src/metrics/goals.ts`; row is `ProjectRow` in `src/app/components/ui.tsx`. |
+| What counts as active / test / deferred | `notionConfig.taskScope` (`deferredLists`, `excludeSourceValues`). |
+| Waiting / blocked rules | `notionConfig.statusRules` / `waitingOnKevin`. |
+| Area classification | Best: an **Area** select in Notion (used verbatim). Fallback: keyword rules in `dashboardConfig.areas`. |
+| Move / remove / resize cards | `src/app/views/*` are flat card lists on a 12-column grid (`span-3` … `span-12`). Swap `StatTile` for a hero ring/number to enlarge. |
+| Visualization | `src/app/components/charts.tsx` (Ring, Sparkline, Columns, Heatmap, DotStrip, Meter, HBars). |
+| Mobile layout | `@media (max-width: 760px)` blocks in `src/app/styles/app.css`; `m-half`, `m-first`, `desktop-only` per card. |
+| Refresh the snapshot without a token | In a Claude session with the Notion connector, re-capture `.data/raw/notion-mcp-snapshot.json` (gitignored), then `npm run sync -- --source=snapshot`. |
